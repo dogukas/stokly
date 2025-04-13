@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStockStore } from "@/store/useStockStore";
+import { useSalesStore } from "@/store/useSalesStore";
 import type { StockItem } from "@/store/useStockStore";
 import { ResponsivePie } from '@nivo/pie';
 import { ResponsiveBar } from '@nivo/bar';
@@ -15,6 +16,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 export default function DashboardPage() {
   const stockData: StockItem[] = useStockStore((state) => state.stockData);
+  const salesData = useSalesStore((state) => state.salesData);
   const [brandFilter, setBrandFilter] = useState("");
   const [productCodeFilter, setProductCodeFilter] = useState("");
   const [showLowStockFilter, setShowLowStockFilter] = useState(false);
@@ -189,6 +191,70 @@ export default function DashboardPage() {
     value: data.total,
     uniqueProducts: data.uniqueProducts.size
   }));
+
+  // Marka bazında satış dağılımı analizi
+  const brandSalesData = salesData.reduce((acc, item) => {
+    const brand = item.Marka;
+    let salesAmount = 0;
+    
+    try {
+      if (typeof item["Satış (VD)"] === 'string') {
+        salesAmount = parseFloat(item["Satış (VD)"].replace('.', '').replace(',', '.')) || 0;
+      } else if (typeof item["Satış (VD)"] === 'number') {
+        salesAmount = item["Satış (VD)"];
+      }
+    } catch (error) {
+      console.error("Satış verisi dönüştürülemedi:", item["Satış (VD)"]);
+    }
+
+    acc[brand] = (acc[brand] || 0) + salesAmount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Marka bazında satış dağılımı için Nivo formatı
+  const brandSalesPieData = Object.entries(brandSalesData).map(([brand, total]) => ({
+    id: brand,
+    label: brand,
+    value: parseFloat(total.toFixed(2))
+  }));
+
+  // Sezon bazında satış dağılımı analizi
+  const seasonSalesData = salesData.reduce((acc, item) => {
+    const season = item.Sezon || 'Belirtilmemiş';
+    let salesAmount = 0;
+    
+    try {
+      if (typeof item["Satış (VD)"] === 'string') {
+        salesAmount = parseFloat(item["Satış (VD)"].replace('.', '').replace(',', '.')) || 0;
+      } else if (typeof item["Satış (VD)"] === 'number') {
+        salesAmount = item["Satış (VD)"];
+      }
+    } catch (error) {
+      console.error("Satış verisi dönüştürülemedi:", item["Satış (VD)"]);
+    }
+
+    acc[season] = (acc[season] || 0) + salesAmount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Ürün grubu bazında satış dağılımı analizi
+  const productGroupSalesData = salesData.reduce((acc, item) => {
+    const group = item["Ürün Grubu"] || 'Belirtilmemiş';
+    let salesAmount = 0;
+    
+    try {
+      if (typeof item["Satış (VD)"] === 'string') {
+        salesAmount = parseFloat(item["Satış (VD)"].replace('.', '').replace(',', '.')) || 0;
+      } else if (typeof item["Satış (VD)"] === 'number') {
+        salesAmount = item["Satış (VD)"];
+      }
+    } catch (error) {
+      console.error("Satış verisi dönüştürülemedi:", item["Satış (VD)"]);
+    }
+
+    acc[group] = (acc[group] || 0) + salesAmount;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -476,6 +542,113 @@ export default function DashboardPage() {
 
       {/* Grafikler */}
       <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marka Bazında Satış Dağılımı</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Markaların toplam satış tutarı içindeki payları
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] w-full pr-4">
+                <div className="space-y-2">
+                  {Object.entries(brandSalesData)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([brand, total], index) => {
+                      const totalSales = Object.values(brandSalesData).reduce((sum, val) => sum + val, 0);
+                      const percentage = ((total / totalSales) * 100).toFixed(1);
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div>
+                            <p className="font-medium text-blue-900">{brand}</p>
+                            <div className="flex gap-2 text-sm text-blue-600">
+                              <span>{total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                            %{percentage}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Sezon Bazında Satış Dağılımı</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Sezonların toplam satış tutarı içindeki payları
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] w-full pr-4">
+                <div className="space-y-2">
+                  {Object.entries(seasonSalesData)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([season, total], index) => {
+                      const totalSales = Object.values(seasonSalesData).reduce((sum, val) => sum + val, 0);
+                      const percentage = ((total / totalSales) * 100).toFixed(1);
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+                          <div>
+                            <p className="font-medium text-green-900">{season}</p>
+                            <div className="flex gap-2 text-sm text-green-600">
+                              <span>{total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="bg-green-100 text-green-700">
+                            %{percentage}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Ürün Grubu Bazında Satış Dağılımı</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Ürün gruplarının toplam satış tutarı içindeki payları
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] w-full pr-4">
+                <div className="space-y-2">
+                  {Object.entries(productGroupSalesData)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([group, total], index) => {
+                      const totalSales = Object.values(productGroupSalesData).reduce((sum, val) => sum + val, 0);
+                      const percentage = ((total / totalSales) * 100).toFixed(1);
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
+                          <div>
+                            <p className="font-medium text-purple-900">{group}</p>
+                            <div className="flex gap-2 text-sm text-purple-600">
+                              <span>{total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="bg-purple-100 text-purple-700">
+                            %{percentage}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>

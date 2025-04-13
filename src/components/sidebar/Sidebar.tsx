@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   HomeIcon,
-  Settings,
   Package,
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
@@ -33,10 +33,11 @@ export function Sidebar({ className }: SidebarProps) {
       badge: "12",
     },
     {
-      title: "Ayarlar",
-      icon: <Settings size={20} />,
-      href: "/settings",
-    },
+      title: "Satış Analiz",
+      icon: <TrendingUp size={20} />,
+      href: "/sales",
+      badge: "Beta",
+    }
   ]
 
   return (
