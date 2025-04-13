@@ -10,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { FileSpreadsheet, Search, Trash2, Filter } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { FileSpreadsheet, Search, Trash2 } from "lucide-react"
 import * as XLSX from 'xlsx'
 import { useStockStore } from "@/store/useStockStore"
 import { Input } from "@/components/ui/input"
@@ -144,43 +145,47 @@ export default function StockPage() {
       )}
 
       <Card className="mt-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Marka</TableHead>
-              <TableHead>Ürün Grubu</TableHead>
-              <TableHead>Ürün Kodu</TableHead>
-              <TableHead>Renk Kodu</TableHead>
-              <TableHead>Beden</TableHead>
-              <TableHead>Envanter</TableHead>
-              <TableHead>Barkod</TableHead>
-              <TableHead>Sezon</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item, index) => (
-              <TableRow key={index}>
-                <TableCell>{item.Marka}</TableCell>
-                <TableCell>{item["Ürün Grubu"]}</TableCell>
-                <TableCell>{item["Ürün Kodu"]}</TableCell>
-                <TableCell>{item["Renk Kodu"]}</TableCell>
-                <TableCell>{item.Beden}</TableCell>
-                <TableCell>{item.Envanter}</TableCell>
-                <TableCell>{item.Barkod}</TableCell>
-                <TableCell>{item.Sezon}</TableCell>
-              </TableRow>
-            ))}
-            {filteredData.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  {stockData.length === 0
-                    ? "Excel dosyası yükleyerek stok verilerini görüntüleyebilirsiniz."
-                    : "Arama kriterlerine uygun sonuç bulunamadı."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <ScrollArea className="h-[600px] rounded-md">
+          <div className="relative">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="w-[150px]">Marka</TableHead>
+                  <TableHead className="w-[150px]">Ürün Grubu</TableHead>
+                  <TableHead className="w-[150px]">Ürün Kodu</TableHead>
+                  <TableHead className="w-[150px]">Renk Kodu</TableHead>
+                  <TableHead className="w-[100px]">Beden</TableHead>
+                  <TableHead className="w-[100px]">Envanter</TableHead>
+                  <TableHead className="w-[150px]">Barkod</TableHead>
+                  <TableHead className="w-[100px]">Sezon</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredData.map((item, index) => (
+                  <TableRow key={index} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{item.Marka}</TableCell>
+                    <TableCell>{item["Ürün Grubu"]}</TableCell>
+                    <TableCell>{item["Ürün Kodu"]}</TableCell>
+                    <TableCell>{item["Renk Kodu"]}</TableCell>
+                    <TableCell>{item.Beden}</TableCell>
+                    <TableCell>{item.Envanter}</TableCell>
+                    <TableCell>{item.Barkod}</TableCell>
+                    <TableCell>{item.Sezon}</TableCell>
+                  </TableRow>
+                ))}
+                {filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-[450px] text-center text-muted-foreground">
+                      {stockData.length === 0
+                        ? "Excel dosyası yükleyerek stok verilerini görüntüleyebilirsiniz."
+                        : "Arama kriterlerine uygun sonuç bulunamadı."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
       </Card>
     </div>
   )

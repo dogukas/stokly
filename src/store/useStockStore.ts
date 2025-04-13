@@ -25,10 +25,12 @@ interface StockState {
   getFilteredData: () => StockItem[]
 }
 
+type PersistedState = Omit<StockState, 'getFilteredData'>
+
 export const useStockStore = create<StockState>()(
   persist(
     (set, get) => ({
-      version: 1, // Store versiyonu
+      version: 1,
       stockData: [],
       searchQuery: '',
       filterField: '',
@@ -45,14 +47,14 @@ export const useStockStore = create<StockState>()(
           if (searchQuery) {
             const searchLower = searchQuery.toLowerCase()
             return Object.values(item).some(
-              (value) => value.toString().toLowerCase().includes(searchLower)
+              (value) => value != null && value.toString().toLowerCase().includes(searchLower)
             )
           }
           
           // Spesifik alan filtresi
           if (filterField && filterValue) {
-            const itemValue = item[filterField].toString().toLowerCase()
-            return itemValue.includes(filterValue.toLowerCase())
+            const itemValue = item[filterField]
+            return itemValue != null && itemValue.toString().toLowerCase().includes(filterValue.toLowerCase())
           }
           
           return true
@@ -61,20 +63,28 @@ export const useStockStore = create<StockState>()(
     }),
     {
       name: 'stock-storage',
-      storage: createJSONStorage(() => localStorage),
-      version: 1, // Persist middleware versiyonu
-      migrate: (persistedState: any, version: number) => {
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') {
+          return window.localStorage
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {}
+        }
+      }),
+      version: 1,
+      migrate: (persistedState: unknown, version: number) => {
         if (version === 0) {
-          // Eğer eski versiyon varsa, yeni yapıya dönüştür
           return {
             version: 1,
-            stockData: persistedState.stockData || [],
+            stockData: (persistedState as PersistedState)?.stockData || [],
             searchQuery: '',
             filterField: '',
             filterValue: '',
           }
         }
-        return persistedState as StockState
+        return persistedState as PersistedState
       },
     }
   )
