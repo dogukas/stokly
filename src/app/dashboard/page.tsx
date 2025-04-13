@@ -83,16 +83,22 @@ export default function DashboardPage() {
     if (!acc[season].brands[brand]) {
       acc[season].brands[brand] = {
         total: 0,
+        uniqueProducts: new Set(),
         count: 0
       };
     }
     acc[season].brands[brand].total += inventory;
-    acc[season].brands[brand].count++;
+    acc[season].brands[brand].uniqueProducts.add(item["Ürün Kodu"]);
+    acc[season].brands[brand].count = acc[season].brands[brand].uniqueProducts.size;
 
     return acc;
   }, {} as Record<string, {
     total: number;
-    brands: Record<string, { total: number; count: number }>;
+    brands: Record<string, { 
+      total: number; 
+      uniqueProducts: Set<string>;
+      count: number;
+    }>;
   }>);
 
   // Sezon analizi için Nivo formatı
@@ -121,6 +127,7 @@ export default function DashboardPage() {
     if (!acc[season].groups[group]) {
       acc[season].groups[group] = {
         total: 0,
+        uniqueProducts: new Set(),
         count: 0
       };
     }
@@ -128,12 +135,17 @@ export default function DashboardPage() {
     const inventory = parseInt(item.Envanter) || 0;
     acc[season].total += inventory;
     acc[season].groups[group].total += inventory;
-    acc[season].groups[group].count++;
+    acc[season].groups[group].uniqueProducts.add(item["Ürün Kodu"]);
+    acc[season].groups[group].count = acc[season].groups[group].uniqueProducts.size;
     
     return acc;
   }, {} as Record<string, {
     total: number;
-    groups: Record<string, { total: number; count: number }>;
+    groups: Record<string, { 
+      total: number; 
+      uniqueProducts: Set<string>;
+      count: number;
+    }>;
   }>);
 
   // Sezon bazında grup dağılımı için Nivo formatı
@@ -166,7 +178,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Benzersiz Ürün</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">SKU (stok kodu adet)</CardTitle>
             <Package2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -199,7 +211,7 @@ export default function DashboardPage() {
 
         <Card className="bg-red-50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Stok Yok</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-600">Tükenen Ürün</CardTitle>
             <AlertCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -472,13 +484,19 @@ export default function DashboardPage() {
                       if (!acc[group]) {
                         acc[group] = {
                           total: 0,
+                          uniqueProducts: new Set(),
                           count: 0
                         };
                       }
                       acc[group].total += parseInt(item.Envanter) || 0;
-                      acc[group].count++;
+                      acc[group].uniqueProducts.add(item["Ürün Kodu"]);
+                      acc[group].count = acc[group].uniqueProducts.size;
                       return acc;
-                    }, {} as Record<string, { total: number; count: number }>);
+                    }, {} as Record<string, { 
+                      total: number; 
+                      uniqueProducts: Set<string>;
+                      count: number;
+                    }>);
 
                     return (
                       <div className="bg-white p-4 rounded-lg shadow-lg border">
