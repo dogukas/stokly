@@ -24,6 +24,8 @@ export default function DashboardPage() {
   const [highStockProductCodeFilter, setHighStockProductCodeFilter] = useState("");
   const [noStockBrandFilter, setNoStockBrandFilter] = useState("");
   const [noStockProductCodeFilter, setNoStockProductCodeFilter] = useState("");
+  const [showProductGroupFilter, setShowProductGroupFilter] = useState(false);
+  const [productGroupNameFilter, setProductGroupNameFilter] = useState("");
 
   // Toplam stok ve benzersiz ürün sayıları
   const totalInventory = stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
@@ -771,80 +773,58 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="col-span-1">
             <CardHeader>
-              <CardTitle>Ürün Grubu Bazında Stok Dağılımı</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Ürün gruplarının toplam stok içindeki payları
-              </p>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package2 className="h-5 w-5 text-purple-600" />
+                  Ürün Grubu Bazında Stok Listesi
+                </CardTitle>
+                <button
+                  onClick={() => setShowProductGroupFilter(!showProductGroupFilter)}
+                  className="p-2 hover:bg-purple-100 rounded-full transition-colors"
+                >
+                  <Filter className={`h-4 w-4 ${showProductGroupFilter ? 'text-purple-600' : 'text-gray-400'}`} />
+                </button>
+              </div>
+              {showProductGroupFilter && (
+                <div className="mt-2 space-y-2">
+                  <Input
+                    placeholder="Ürün grubu ara..."
+                    value={productGroupNameFilter}
+                    onChange={(e) => setProductGroupNameFilter(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
-                <ResponsivePie
-                  data={productGroupPieData}
-                  margin={{ top: 40, right: 120, bottom: 40, left: 120 }}
-                  innerRadius={0.5}
-                  padAngle={0.7}
-                  cornerRadius={3}
-                  activeOuterRadiusOffset={8}
-                  colors={{ scheme: 'category10' }}
-                  borderWidth={1}
-                  borderColor={{
-                    from: 'color',
-                    modifiers: [['darker', 0.2]]
-                  }}
-                  arcLinkLabelsSkipAngle={10}
-                  arcLinkLabelsTextColor="#333333"
-                  arcLinkLabelsThickness={2}
-                  arcLinkLabelsColor={{ from: 'color' }}
-                  arcLabelsSkipAngle={10}
-                  arcLabelsTextColor={{
-                    from: 'color',
-                    modifiers: [['darker', 2]]
-                  }}
-                  legends={[
-                    {
-                      anchor: 'right',
-                      direction: 'column',
-                      justify: false,
-                      translateX: 100,
-                      translateY: 0,
-                      itemsSpacing: 2,
-                      itemWidth: 100,
-                      itemHeight: 20,
-                      itemDirection: 'left-to-right',
-                      itemOpacity: 0.85,
-                      symbolSize: 18,
-                      symbolShape: 'circle'
-                    }
-                  ]}
-                  tooltip={({ datum }) => {
-                    const totalInventory = stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
-                    const percentage = ((datum.value / totalInventory) * 100).toFixed(1);
-                    
-                    return (
-                      <div className="bg-white p-3 rounded-lg shadow-lg border min-w-[280px]">
-                        <div className="border-b pb-2 mb-2">
-                          <p className="font-medium text-gray-900">{datum.id}</p>
-                          <div className="flex items-center gap-4 text-sm mt-1">
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: datum.color }} />
-                              <span className="text-gray-600">{datum.value} adet</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 rounded-full bg-purple-500" />
-                              <span className="text-gray-600">{datum.data.uniqueProducts} çeşit</span>
-                            </div>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs py-0 h-4">
-                              %{percentage}
-                            </Badge>
-                          </div>
+              <ScrollArea className="h-[300px] w-full pr-4">
+                <div className="space-y-2">
+                  {productGroupPieData
+                    .filter(group => {
+                      const nameMatch = !productGroupNameFilter || 
+                        group.id.toLowerCase().includes(productGroupNameFilter.toLowerCase());
+                      return nameMatch;
+                    })
+                    .sort((a, b) => b.value - a.value)
+                    .map((group, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
+                      <div>
+                        <p className="font-medium text-purple-900">{group.id}</p>
+                        <div className="flex gap-2 text-sm text-purple-600">
+                          <span>{group.value} adet stok</span>
+                          <span>•</span>
+                          <span>{group.uniqueProducts} çeşit ürün</span>
                         </div>
                       </div>
-                    );
-                  }}
-                />
-              </div>
+                      <Badge variant="outline" className="bg-purple-100 text-purple-700">
+                        %{((group.value / stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0)) * 100).toFixed(1)}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
