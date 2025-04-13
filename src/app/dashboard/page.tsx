@@ -32,24 +32,24 @@ export default function DashboardPage() {
   // Stok durumu analizleri - Birbirinden bağımsız hesaplamalar
   const lowStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock > 0 && stock <= 2;
+    return stock >= 1 && stock <= 3;
   });
 
   const highStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock >= 5;
+    return stock >= 4 && stock <= 9;
   });
 
-  const noStock = stockData.filter(item => {
+  const mediumStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock === 0;
+    return stock >= 5 && stock <= 8;
   });
 
   // Her bir durum için toplam ürün sayısına göre yüzde hesaplama
   const totalProducts = stockData.length;
   const lowStockPercentage = ((lowStock.length / totalProducts) * 100).toFixed(1);
   const highStockPercentage = ((highStock.length / totalProducts) * 100).toFixed(1);
-  const noStockPercentage = ((noStock.length / totalProducts) * 100).toFixed(1);
+  const mediumStockPercentage = ((mediumStock.length / totalProducts) * 100).toFixed(1);
 
   // Marka bazında envanter dağılımı - Tüm ürünleri dahil et
   const brandInventory = stockData.reduce((acc, item) => {
@@ -159,6 +159,35 @@ export default function DashboardPage() {
       color: COLORS[Math.floor(Math.random() * COLORS.length)]
     }));
 
+  // Ürün grubu bazında envanter dağılımı
+  const productGroupInventory = stockData.reduce((acc, item) => {
+    const group = item["Ürün Grubu"] || 'Belirtilmemiş';
+    const inventory = parseInt(item.Envanter) || 0;
+    
+    if (!acc[group]) {
+      acc[group] = {
+        total: 0,
+        uniqueProducts: new Set()
+      };
+    }
+    
+    acc[group].total += inventory;
+    acc[group].uniqueProducts.add(item["Ürün Kodu"]);
+    
+    return acc;
+  }, {} as Record<string, {
+    total: number;
+    uniqueProducts: Set<string>;
+  }>);
+
+  // Ürün grubu bazında envanter dağılımı için Nivo formatı
+  const productGroupPieData = Object.entries(productGroupInventory).map(([group, data]) => ({
+    id: group,
+    label: group,
+    value: data.total,
+    uniqueProducts: data.uniqueProducts.size
+  }));
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold">Stok Yönetim Paneli</h1>
@@ -209,14 +238,14 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-red-50">
+        <Card className="bg-blue-50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Tükenen Ürün</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium text-blue-600">Orta Adetli Stok</CardTitle>
+            <Package2 className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{noStock.length}</div>
-            <p className="text-xs text-red-600">Toplam ürünlerin {noStockPercentage}%'i</p>
+            <div className="text-2xl font-bold text-blue-600">{mediumStock.length}</div>
+            <p className="text-xs text-blue-600">Toplam ürünlerin {mediumStockPercentage}%'i</p>
           </CardContent>
         </Card>
       </div>
@@ -373,14 +402,14 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                Tükenen Ürünler
+                <Package2 className="h-5 w-5 text-blue-600" />
+                Orta Adetli Stok Listesi
               </CardTitle>
               <button
                 onClick={() => setShowNoStockFilter(!showNoStockFilter)}
-                className="p-2 hover:bg-red-100 rounded-full transition-colors"
+                className="p-2 hover:bg-blue-100 rounded-full transition-colors"
               >
-                <Filter className={`h-4 w-4 ${showNoStockFilter ? 'text-red-600' : 'text-gray-400'}`} />
+                <Filter className={`h-4 w-4 ${showNoStockFilter ? 'text-blue-600' : 'text-gray-400'}`} />
               </button>
             </div>
             {showNoStockFilter && (
@@ -403,7 +432,7 @@ export default function DashboardPage() {
           <CardContent>
             <ScrollArea className="h-[300px] w-full pr-4">
               <div className="space-y-2">
-                {noStock
+                {mediumStock
                   .filter(item => {
                     const brandMatch = !noStockBrandFilter || 
                       (item.Marka?.toString().toLowerCase() || "").includes(noStockBrandFilter.toLowerCase());
@@ -412,15 +441,15 @@ export default function DashboardPage() {
                     return brandMatch && productCodeMatch;
                   })
                   .map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                  <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
                     <div>
-                      <p className="font-medium text-red-900">{item.Marka}</p>
-                      <div className="flex gap-2 text-sm text-red-600">
+                      <p className="font-medium text-blue-900">{item.Marka}</p>
+                      <div className="flex gap-2 text-sm text-blue-600">
                         <span>{item["Ürün Kodu"]}</span>
                         <span>•</span>
                         <span>{item["Ürün Grubu"]}</span>
                       </div>
-                      <div className="flex gap-2 text-xs text-red-500 mt-1">
+                      <div className="flex gap-2 text-xs text-blue-500 mt-1">
                         <span className="flex items-center gap-1">
                           <span className="font-medium">Renk:</span>
                           {item["Renk Kodu"]}
@@ -432,8 +461,8 @@ export default function DashboardPage() {
                         </span>
                       </div>
                     </div>
-                    <Badge variant="outline" className="bg-red-100 text-red-700">
-                      Stok Yok
+                    <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                      {item.Envanter} adet
                     </Badge>
                   </div>
                 ))}
@@ -733,6 +762,83 @@ export default function DashboardPage() {
                                 </div>
                               );
                             })}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Ürün Grubu Bazında Stok Dağılımı</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Ürün gruplarının toplam stok içindeki payları
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ResponsivePie
+                  data={productGroupPieData}
+                  margin={{ top: 40, right: 120, bottom: 40, left: 120 }}
+                  innerRadius={0.5}
+                  padAngle={0.7}
+                  cornerRadius={3}
+                  activeOuterRadiusOffset={8}
+                  colors={{ scheme: 'category10' }}
+                  borderWidth={1}
+                  borderColor={{
+                    from: 'color',
+                    modifiers: [['darker', 0.2]]
+                  }}
+                  arcLinkLabelsSkipAngle={10}
+                  arcLinkLabelsTextColor="#333333"
+                  arcLinkLabelsThickness={2}
+                  arcLinkLabelsColor={{ from: 'color' }}
+                  arcLabelsSkipAngle={10}
+                  arcLabelsTextColor={{
+                    from: 'color',
+                    modifiers: [['darker', 2]]
+                  }}
+                  legends={[
+                    {
+                      anchor: 'right',
+                      direction: 'column',
+                      justify: false,
+                      translateX: 100,
+                      translateY: 0,
+                      itemsSpacing: 2,
+                      itemWidth: 100,
+                      itemHeight: 20,
+                      itemDirection: 'left-to-right',
+                      itemOpacity: 0.85,
+                      symbolSize: 18,
+                      symbolShape: 'circle'
+                    }
+                  ]}
+                  tooltip={({ datum }) => {
+                    const totalInventory = stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
+                    const percentage = ((datum.value / totalInventory) * 100).toFixed(1);
+                    
+                    return (
+                      <div className="bg-white p-3 rounded-lg shadow-lg border min-w-[280px]">
+                        <div className="border-b pb-2 mb-2">
+                          <p className="font-medium text-gray-900">{datum.id}</p>
+                          <div className="flex items-center gap-4 text-sm mt-1">
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: datum.color }} />
+                              <span className="text-gray-600">{datum.value} adet</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-purple-500" />
+                              <span className="text-gray-600">{datum.data.uniqueProducts} çeşit</span>
+                            </div>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs py-0 h-4">
+                              %{percentage}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     );
