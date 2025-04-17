@@ -9,14 +9,15 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  Users,
-  BarChart3
+  Users
 } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+}
 
 export function Sidebar({ className }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
