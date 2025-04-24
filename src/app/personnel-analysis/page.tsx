@@ -2,10 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ResponsivePie } from "@nivo/pie";
-import { Package2, Upload, ChevronDown, ChevronUp } from "lucide-react";
+import { Package2, Upload } from "lucide-react";
 import { useState } from "react";
 import * as XLSX from 'xlsx';
 
@@ -38,7 +37,6 @@ export default function PersonnelAnalysisPage() {
     }
     return [];
   });
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Verileri localStorage'a kaydet
   const updateSalesData = (newData: SalesData[]) => {
@@ -134,10 +132,10 @@ export default function PersonnelAnalysisPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Personel Analiz Raporu</h1>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold mb-4 md:mb-0 text-center md:text-left">Personel Analiz Raporu</h1>
         <div className="flex gap-4">
-          <Button onClick={() => document.getElementById('fileInput')?.click()}>
+          <Button onClick={() => document.getElementById('fileInput')?.click()} className="bg-blue-600 hover:bg-blue-700">
             <Upload className="mr-2 h-4 w-4" />
             Excel Yükle
           </Button>
@@ -149,7 +147,7 @@ export default function PersonnelAnalysisPage() {
             onChange={handleFileUpload}
           />
           {salesData.length > 0 && (
-            <Button variant="destructive" onClick={handleClearData}>
+            <Button variant="destructive" onClick={handleClearData} className="hover:bg-red-700">
               <Package2 className="mr-2 h-4 w-4" />
               Verileri Temizle
             </Button>
@@ -159,13 +157,19 @@ export default function PersonnelAnalysisPage() {
 
       {/* İstatistik Kartları */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Toplam Satış Tutarı</CardTitle>
+        <Card className="overflow-hidden border-t-4 border-blue-500 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 justify-center">
+              <div className="p-2 bg-blue-100 text-blue-700 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              </div>
+              Toplam Satış Tutarı
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-center">Tüm satışların toplam değeri</p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <span className="text-2xl font-bold">
+            <div className="flex items-center justify-center">
+              <span className="text-3xl font-bold text-blue-700">
                 {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' })
                   .format(statistics.totalSales)}
               </span>
@@ -173,24 +177,55 @@ export default function PersonnelAnalysisPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Toplam Satış Adedi</CardTitle>
+        <Card className="overflow-hidden border-t-4 border-green-500 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 justify-center">
+              <div className="p-2 bg-green-100 text-green-700 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>
+              </div>
+              Toplam Satış Adedi
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-center">Satılan toplam ürün sayısı</p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <span className="text-2xl font-bold">{statistics.totalQuantity}</span>
+            <div className="flex items-center justify-center">
+              <span className="text-3xl font-bold text-green-700">{new Intl.NumberFormat('tr-TR').format(statistics.totalQuantity)}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">En Çok Satan Marka</CardTitle>
+        <Card className="overflow-hidden border-t-4 border-purple-500 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 justify-center">
+              <div className="p-2 bg-purple-100 text-purple-700 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              </div>
+              En Çok Satan Marka
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-center">Adede göre en çok satan markalar</p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <span className="text-2xl font-bold">{statistics.topBrand}</span>
+            <div className="flex flex-col gap-3 mx-auto">
+              {(() => {
+                const topBrands = Object.entries(brandDistribution)
+                  .sort(([,a], [,b]) => b - a)
+                  .slice(0, 3);
+                
+                return topBrands.map(([brand, quantity], index) => (
+                  <div key={brand} className="flex items-center justify-between group hover:bg-purple-50 p-1.5 rounded-md transition-colors w-full">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full ${index === 0 ? 'bg-purple-600' : index === 1 ? 'bg-purple-500' : 'bg-purple-400'} text-white`}>
+                        <span className="text-xs font-bold">{index + 1}</span>
+                      </div>
+                      <span className="font-medium group-hover:text-purple-700 transition-colors">{brand}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-bold text-purple-700">{new Intl.NumberFormat('tr-TR').format(quantity)}</span>
+                      <span className="text-sm text-muted-foreground ml-1">adet</span>
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -271,6 +306,12 @@ export default function PersonnelAnalysisPage() {
                     .sort((a, b) => b["Satış Tutarı"] - a["Satış Tutarı"])
                     .map((item, index) => {
                       const percentage = (item["Satış Tutarı"] / totalAmount) * 100;
+                      
+                      // ASP (Ortalama Satış Fiyatı) hesapla
+                      const asp = item["Satış Adedi"] > 0 
+                        ? item["Satış Tutarı"] / item["Satış Adedi"] 
+                        : 0;
+                      
                       return (
                         <div
                           key={index}
@@ -309,11 +350,11 @@ export default function PersonnelAnalysisPage() {
                                 </div>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                Ortalama: {new Intl.NumberFormat('tr-TR', { 
+                                ASP: {new Intl.NumberFormat('tr-TR', { 
                                   style: 'currency', 
                                   currency: 'TRY',
                                   maximumFractionDigits: 0 
-                                }).format(item["Satış Tutarı"] / item["Satış Adedi"])} / adet
+                                }).format(asp)}
                               </div>
                             </div>
                           </div>
@@ -369,7 +410,9 @@ export default function PersonnelAnalysisPage() {
                         <div className="text-sm mb-1">Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)}</div>
                         <div className="border-t border-gray-200 mt-2 pt-2">
                           <div className="font-semibold mb-1">Marka Bazlı Dağılım:</div>
-                          {Object.entries(datum.data.personelData).map(([marka, adet]) => (
+                          {Object.entries(datum.data.personelData)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([marka, adet]) => (
                             <div key={marka} className="flex justify-between text-sm">
                               <span>{marka}:</span>
                               <span className="ml-4 font-medium">{new Intl.NumberFormat('tr-TR').format(adet)} adet</span>
@@ -485,204 +528,6 @@ export default function PersonnelAnalysisPage() {
           </Card>
         </div>
       </div>
-
-      {/* En Çok Satan 5 Ürün */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Satışı Yüksek olan ürünler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-3">
-              {(() => {
-                // Ürün bazlı satış verilerini hesapla
-                const productSales = salesData.reduce((acc, sale) => {
-                  const key = sale.urunKodu;
-                  if (!acc[key]) {
-                    acc[key] = {
-                      urunKodu: sale.urunKodu,
-                      toplamAdet: 0,
-                      toplamTutar: 0,
-                      markalar: new Set(),
-                      personeller: {},
-                      renkKodlari: new Set()
-                    };
-                  }
-                  acc[key].toplamAdet += sale.satisAdeti;
-                  acc[key].toplamTutar += sale.satisFiyati;
-                  acc[key].markalar.add(sale.marka);
-                  acc[key].renkKodlari.add(sale.renkKodu);
-                  
-                  if (!acc[key].personeller[sale.personelAdi]) {
-                    acc[key].personeller[sale.personelAdi] = {
-                      adet: 0,
-                      tutar: 0
-                    };
-                  }
-                  acc[key].personeller[sale.personelAdi].adet += sale.satisAdeti;
-                  acc[key].personeller[sale.personelAdi].tutar += sale.satisFiyati;
-                  
-                  return acc;
-                }, {} as Record<string, {
-                  urunKodu: string;
-                  toplamAdet: number;
-                  toplamTutar: number;
-                  markalar: Set<string>;
-                  personeller: Record<string, { adet: number; tutar: number }>;
-                  renkKodlari: Set<string>;
-                }>);
-
-                // En çok satan 5 ürünü bul
-                const top5Products = Object.values(productSales)
-                  .sort((a, b) => b.toplamAdet - a.toplamAdet)
-                  .slice(0, 5);
-
-                return top5Products.map((product, index) => {
-                  const bestSeller = Object.entries(product.personeller)
-                    .sort(([,a], [,b]) => b.adet - a.adet)[0];
-                  
-                  const percentage = (product.toplamAdet / statistics.totalQuantity) * 100;
-
-                  return (
-                    <div
-                      key={product.urunKodu}
-                      className="relative p-4 bg-secondary/5 rounded-lg hover:bg-secondary/10 transition-colors"
-                    >
-                      {/* Progress bar arka planı */}
-                      <div 
-                        className="absolute left-0 top-0 h-full bg-primary/5 rounded-lg transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                      
-                      {/* İçerik */}
-                      <div className="relative flex flex-col space-y-3">
-                        {/* Üst Kısım - Ürün Bilgisi */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                              <span className="text-sm font-bold">{index + 1}</span>
-                            </div>
-                            <div>
-                              <h3 className="font-medium">Ürün Kodu: {product.urunKodu}</h3>
-                              <div className="text-sm text-muted-foreground">
-                                {Array.from(product.markalar).join(', ')}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Renk Kodları: {Array.from(product.renkKodlari).join(', ')}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-2">
-                              <div className="text-xl font-bold text-green-600">
-                                {new Intl.NumberFormat('tr-TR').format(product.toplamAdet)} adet
-                              </div>
-                              <div className="text-sm font-semibold text-primary">
-                                {percentage.toFixed(1)}%
-                              </div>
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Ciro: {new Intl.NumberFormat('tr-TR', { 
-                                style: 'currency', 
-                                currency: 'TRY',
-                                maximumFractionDigits: 0 
-                              }).format(product.toplamTutar)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Alt Kısım - En İyi Satıcı */}
-                        <div className="flex items-center justify-between bg-primary/5 p-2 rounded-md">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-primary/10">
-                              En İyi Satıcı
-                            </Badge>
-                            <span className="font-medium">{bestSeller?.[0]}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-sm">
-                              <span className="font-semibold text-green-600">
-                                {new Intl.NumberFormat('tr-TR').format(bestSeller?.[1].adet || 0)}
-                              </span>
-                              <span className="text-muted-foreground ml-1">adet</span>
-                            </div>
-                            <div className="text-sm text-primary font-medium">
-                              ({((bestSeller?.[1].adet || 0) / product.toplamAdet * 100).toFixed(1)}%)
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* Satış Detay Listesi */}
-      <Card>
-        <CardHeader 
-          className="cursor-pointer hover:bg-secondary/10 transition-colors"
-          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-        >
-          <div className="flex items-center justify-between">
-            <CardTitle>Satış Detayları</CardTitle>
-            <Button variant="ghost" size="icon">
-              {isDetailsOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-        {isDetailsOpen && (
-          <CardContent>
-            <ScrollArea className="h-[400px] w-full">
-              <div className="space-y-4">
-                {salesData.map((sale, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 bg-secondary/10 rounded-lg hover:bg-secondary/20 transition-colors"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{sale.personelAdi}</h3>
-                        <Badge variant="outline">{sale.marka}</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Ürün Kodu:</span>
-                          <span className="ml-2 font-medium">{sale.urunKodu}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Renk Kodu:</span>
-                          <span className="ml-2 font-medium">{sale.renkKodu}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Satış Adedi</div>
-                        <div className="text-xl font-bold text-blue-600">{sale.satisAdeti}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Satış Tutarı</div>
-                        <div className="text-xl font-bold text-green-600">
-                          {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' })
-                            .format(sale.satisFiyati)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        )}
-      </Card>
     </div>
   );
 } 
