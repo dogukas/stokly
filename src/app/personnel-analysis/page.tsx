@@ -81,7 +81,7 @@ export default function PersonnelAnalysisPage() {
 
   // İstatistikleri hesaplama
   const statistics = {
-    totalSales: salesData.reduce((sum, item) => sum + (Number(item.satisFiyati) || 0), 0),
+    totalSales: salesData.reduce((sum, item) => sum + ((Number(item.satisFiyati) * Number(item.satisAdeti)) || 0), 0),
     totalQuantity: salesData.reduce((sum, item) => sum + (Number(item.satisAdeti) || 0), 0),
     topBrand: (() => {
       const brandCounts = salesData.reduce((acc, item) => {
@@ -117,7 +117,7 @@ export default function PersonnelAnalysisPage() {
         totalQuantity: 0
       };
     }
-    acc[personelAdi].totalSales += Number(item.satisFiyati) || 0;
+    acc[personelAdi].totalSales += (Number(item.satisFiyati) * Number(item.satisAdeti)) || 0;
     acc[personelAdi].totalQuantity += Number(item.satisAdeti) || 0;
     return acc;
   }, {} as Record<string, { totalSales: number; totalQuantity: number }>);
@@ -312,6 +312,12 @@ export default function PersonnelAnalysisPage() {
                         ? item["Satış Tutarı"] / item["Satış Adedi"] 
                         : 0;
                       
+                      // UPT (Unit Per Transaction) hesapla - Her personel için satış adeti / satır sayısı
+                      const personelSatislar = salesData.filter(sale => sale.personelAdi === item.name);
+                      const upt = personelSatislar.length > 0
+                        ? item["Satış Adedi"] / personelSatislar.length
+                        : 0;
+                      
                       return (
                         <div
                           key={index}
@@ -355,6 +361,11 @@ export default function PersonnelAnalysisPage() {
                                   currency: 'TRY',
                                   maximumFractionDigits: 0 
                                 }).format(asp)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                UPT: {new Intl.NumberFormat('tr-TR', {
+                                  maximumFractionDigits: 2 
+                                }).format(upt)}
                               </div>
                             </div>
                           </div>
