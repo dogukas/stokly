@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ResponsivePie } from "@nivo/pie";
 import { Package2, Upload } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
 
 // Excel verisi için tip tanımı
@@ -29,19 +29,23 @@ interface ExcelRow {
 }
 
 export default function PersonnelAnalysisPage() {
-  // localStorage'dan verileri al veya boş array kullan
-  const [salesData, setSalesData] = useState<SalesData[]>(() => {
-    if (typeof window !== 'undefined') {
-      const savedData = localStorage.getItem('salesData');
-      return savedData ? JSON.parse(savedData) : [];
+  // State with initial empty array
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+
+  // Use effect to load data from localStorage only on client side
+  useEffect(() => {
+    const savedData = localStorage.getItem('salesData');
+    if (savedData) {
+      setSalesData(JSON.parse(savedData));
     }
-    return [];
-  });
+  }, []);
 
   // Verileri localStorage'a kaydet
   const updateSalesData = (newData: SalesData[]) => {
     setSalesData(newData);
-    localStorage.setItem('salesData', JSON.stringify(newData));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('salesData', JSON.stringify(newData));
+    }
   };
 
   // Excel dosyasını işleme fonksiyonu
@@ -314,6 +318,9 @@ export default function PersonnelAnalysisPage() {
                       
                       // UPT (Unit Per Transaction) hesapla - Her personel için satış adeti / satır sayısı
                       const personelSatislar = salesData.filter(sale => sale.personelAdi === item.name);
+                      
+                      // Doğru UPT hesaplaması: Toplam satılan ürün sayısı / Toplam işlem sayısı
+                      // Bu metrikte 'işlem' satır sayısı, yani farklı satış kayıtlarının sayısı olarak değerlendirilir
                       const upt = personelSatislar.length > 0
                         ? item["Satış Adedi"] / personelSatislar.length
                         : 0;

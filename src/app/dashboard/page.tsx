@@ -14,6 +14,153 @@ import { useState } from "react";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+// LowStockItem bileşeni oluşturuluyor
+const LowStockItem = ({ item, index }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="bg-orange-50 rounded-lg border border-orange-100 overflow-hidden">
+      <div 
+        className="flex items-center justify-between p-3 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div>
+          <p className="font-medium text-orange-900">{item.Marka}</p>
+          <div className="flex gap-2 text-sm text-orange-600">
+            <span>{item["Ürün Kodu"]}</span>
+            <span>•</span>
+            <span>{item["Ürün Grubu"]}</span>
+          </div>
+          <div className="flex gap-2 text-xs text-orange-500 mt-1">
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Renk:</span>
+              {item["Renk Kodu"]}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end">
+          <Badge variant="outline" className="bg-orange-100 text-orange-700">
+            {item.totalEnvanter} adet
+          </Badge>
+          <span className="text-xs text-orange-500 mt-1">{item.bedenler.length} beden</span>
+        </div>
+      </div>
+      
+      {isOpen && (
+        <div className="px-3 pb-3 pt-1 border-t border-orange-100">
+          <div className="text-sm font-medium text-orange-800 mb-2">Beden Detayları:</div>
+          <div className="grid grid-cols-3 gap-2">
+            {item.bedenler.map((bedenItem, bedenIndex) => (
+              <div key={bedenIndex} className="bg-orange-100 rounded p-2 text-xs">
+                <div className="font-medium text-orange-800">{bedenItem.beden}</div>
+                <div className="text-orange-700">{bedenItem.envanter} adet</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// HighStockItem bileşeni oluşturuluyor
+const HighStockItem = ({ item, index }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="bg-green-50 rounded-lg border border-green-100 overflow-hidden">
+      <div 
+        className="flex items-center justify-between p-3 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div>
+          <p className="font-medium text-green-900">{item.Marka}</p>
+          <div className="flex gap-2 text-sm text-green-600">
+            <span>{item["Ürün Kodu"]}</span>
+            <span>•</span>
+            <span>{item["Ürün Grubu"]}</span>
+          </div>
+          <div className="flex gap-2 text-xs text-green-500 mt-1">
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Renk:</span>
+              {item["Renk Kodu"]}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end">
+          <Badge variant="outline" className="bg-green-100 text-green-700">
+            {item.totalEnvanter} adet
+          </Badge>
+          <span className="text-xs text-green-500 mt-1">{item.bedenler.length} beden</span>
+        </div>
+      </div>
+      
+      {isOpen && (
+        <div className="px-3 pb-3 pt-1 border-t border-green-100">
+          <div className="text-sm font-medium text-green-800 mb-2">Beden Detayları:</div>
+          <div className="grid grid-cols-3 gap-2">
+            {item.bedenler.map((bedenItem, bedenIndex) => (
+              <div key={bedenIndex} className="bg-green-100 rounded p-2 text-xs">
+                <div className="font-medium text-green-800">{bedenItem.beden}</div>
+                <div className="text-green-700">{bedenItem.envanter} adet</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// MediumStockItem bileşeni oluşturuluyor
+const MediumStockItem = ({ item, index }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="bg-blue-50 rounded-lg border border-blue-100 overflow-hidden">
+      <div 
+        className="flex items-center justify-between p-3 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div>
+          <p className="font-medium text-blue-900">{item.Marka}</p>
+          <div className="flex gap-2 text-sm text-blue-600">
+            <span>{item["Ürün Kodu"]}</span>
+            <span>•</span>
+            <span>{item["Ürün Grubu"]}</span>
+          </div>
+          <div className="flex gap-2 text-xs text-blue-500 mt-1">
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Renk:</span>
+              {item["Renk Kodu"]}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end">
+          <Badge variant="outline" className="bg-blue-100 text-blue-700">
+            {item.totalEnvanter} adet
+          </Badge>
+          <span className="text-xs text-blue-500 mt-1">{item.bedenler.length} beden</span>
+        </div>
+      </div>
+      
+      {isOpen && (
+        <div className="px-3 pb-3 pt-1 border-t border-blue-100">
+          <div className="text-sm font-medium text-blue-800 mb-2">Beden Detayları:</div>
+          <div className="grid grid-cols-3 gap-2">
+            {item.bedenler.map((bedenItem, bedenIndex) => (
+              <div key={bedenIndex} className="bg-blue-100 rounded p-2 text-xs">
+                <div className="font-medium text-blue-800">{bedenItem.beden}</div>
+                <div className="text-blue-700">{bedenItem.envanter} adet</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function DashboardPage() {
   const stockData: StockItem[] = useStockStore((state) => state.stockData);
   const salesData = useSalesStore((state) => state.salesData);
@@ -41,12 +188,12 @@ export default function DashboardPage() {
 
   const highStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock >= 4 && stock <= 9;
+    return stock >= 6 && stock <= 9;
   });
 
   const mediumStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock >= 5 && stock <= 8;
+    return stock >= 4 && stock <= 5;
   });
 
   // Her bir durum için toplam ürün sayısına göre yüzde hesaplama
@@ -292,6 +439,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{lowStock.length}</div>
             <p className="text-xs text-orange-600">Toplam ürünlerin {lowStockPercentage}%'i</p>
+            <p className="text-xs text-orange-600 mt-1">Toplam {new Set(lowStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
           </CardContent>
         </Card>
 
@@ -303,6 +451,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{highStock.length}</div>
             <p className="text-xs text-green-600">Toplam ürünlerin {highStockPercentage}%'i</p>
+            <p className="text-xs text-green-600 mt-1">Toplam {new Set(highStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
           </CardContent>
         </Card>
 
@@ -314,6 +463,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{mediumStock.length}</div>
             <p className="text-xs text-blue-600">Toplam ürünlerin {mediumStockPercentage}%'i</p>
+            <p className="text-xs text-blue-600 mt-1">Toplam {new Set(mediumStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
           </CardContent>
         </Card>
       </div>
@@ -354,40 +504,37 @@ export default function DashboardPage() {
           <CardContent>
             <ScrollArea className="h-[300px] w-full pr-4">
               <div className="space-y-2">
-                {lowStock
-                  .filter(item => {
-                    const brandMatch = !brandFilter || 
-                      (item.Marka?.toString().toLowerCase() || "").includes(brandFilter.toLowerCase());
-                    const productCodeMatch = !productCodeFilter || 
-                      (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(productCodeFilter.toLowerCase());
-                    return brandMatch && productCodeMatch;
-                  })
-                  .map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <div>
-                      <p className="font-medium text-orange-900">{item.Marka}</p>
-                      <div className="flex gap-2 text-sm text-orange-600">
-                        <span>{item["Ürün Kodu"]}</span>
-                        <span>•</span>
-                        <span>{item["Ürün Grubu"]}</span>
-                      </div>
-                      <div className="flex gap-2 text-xs text-orange-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Renk:</span>
-                          {item["Renk Kodu"]}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Beden:</span>
-                          {item.Beden}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-orange-100 text-orange-700">
-                      {item.Envanter} adet
-                    </Badge>
-                  </div>
-                ))}
+                {(() => {
+                  // SKU bazında birleştirme
+                  const skuGroups = lowStock.reduce((acc, item) => {
+                    const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        Marka: item.Marka,
+                        "Ürün Kodu": item["Ürün Kodu"],
+                        "Ürün Grubu": item["Ürün Grubu"],
+                        "Renk Kodu": item["Renk Kodu"],
+                        bedenler: [],
+                        totalEnvanter: 0
+                      };
+                    }
+                    acc[key].bedenler.push({ beden: item.Beden, envanter: parseInt(item.Envanter) || 0 });
+                    acc[key].totalEnvanter += parseInt(item.Envanter) || 0;
+                    return acc;
+                  }, {});
+
+                  return Object.values(skuGroups)
+                    .filter(item => {
+                      const brandMatch = !brandFilter || 
+                        (item.Marka?.toString().toLowerCase() || "").includes(brandFilter.toLowerCase());
+                      const productCodeMatch = !productCodeFilter || 
+                        (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(productCodeFilter.toLowerCase());
+                      return brandMatch && productCodeMatch;
+                    })
+                    .map((item, index) => (
+                      <LowStockItem key={index} item={item} index={index} />
+                    ));
+                })()}
               </div>
             </ScrollArea>
           </CardContent>
@@ -427,40 +574,37 @@ export default function DashboardPage() {
           <CardContent>
             <ScrollArea className="h-[300px] w-full pr-4">
               <div className="space-y-2">
-                {highStock
-                  .filter(item => {
-                    const brandMatch = !highStockBrandFilter || 
-                      (item.Marka?.toString().toLowerCase() || "").includes(highStockBrandFilter.toLowerCase());
-                    const productCodeMatch = !highStockProductCodeFilter || 
-                      (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(highStockProductCodeFilter.toLowerCase());
-                    return brandMatch && productCodeMatch;
-                  })
-                  .map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
-                    <div>
-                      <p className="font-medium text-green-900">{item.Marka}</p>
-                      <div className="flex gap-2 text-sm text-green-600">
-                        <span>{item["Ürün Kodu"]}</span>
-                        <span>•</span>
-                        <span>{item["Ürün Grubu"]}</span>
-                      </div>
-                      <div className="flex gap-2 text-xs text-green-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Renk:</span>
-                          {item["Renk Kodu"]}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Beden:</span>
-                          {item.Beden}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-green-100 text-green-700">
-                      {item.Envanter} adet
-                    </Badge>
-                  </div>
-                ))}
+                {(() => {
+                  // SKU bazında birleştirme
+                  const skuGroups = highStock.reduce((acc, item) => {
+                    const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        Marka: item.Marka,
+                        "Ürün Kodu": item["Ürün Kodu"],
+                        "Ürün Grubu": item["Ürün Grubu"],
+                        "Renk Kodu": item["Renk Kodu"],
+                        bedenler: [],
+                        totalEnvanter: 0
+                      };
+                    }
+                    acc[key].bedenler.push({ beden: item.Beden, envanter: parseInt(item.Envanter) || 0 });
+                    acc[key].totalEnvanter += parseInt(item.Envanter) || 0;
+                    return acc;
+                  }, {});
+
+                  return Object.values(skuGroups)
+                    .filter(item => {
+                      const brandMatch = !highStockBrandFilter || 
+                        (item.Marka?.toString().toLowerCase() || "").includes(highStockBrandFilter.toLowerCase());
+                      const productCodeMatch = !highStockProductCodeFilter || 
+                        (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(highStockProductCodeFilter.toLowerCase());
+                      return brandMatch && productCodeMatch;
+                    })
+                    .map((item, index) => (
+                      <HighStockItem key={index} item={item} index={index} />
+                    ));
+                })()}
               </div>
             </ScrollArea>
           </CardContent>
@@ -500,40 +644,37 @@ export default function DashboardPage() {
           <CardContent>
             <ScrollArea className="h-[300px] w-full pr-4">
               <div className="space-y-2">
-                {mediumStock
-                  .filter(item => {
-                    const brandMatch = !noStockBrandFilter || 
-                      (item.Marka?.toString().toLowerCase() || "").includes(noStockBrandFilter.toLowerCase());
-                    const productCodeMatch = !noStockProductCodeFilter || 
-                      (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(noStockProductCodeFilter.toLowerCase());
-                    return brandMatch && productCodeMatch;
-                  })
-                  .map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div>
-                      <p className="font-medium text-blue-900">{item.Marka}</p>
-                      <div className="flex gap-2 text-sm text-blue-600">
-                        <span>{item["Ürün Kodu"]}</span>
-                        <span>•</span>
-                        <span>{item["Ürün Grubu"]}</span>
-                      </div>
-                      <div className="flex gap-2 text-xs text-blue-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Renk:</span>
-                          {item["Renk Kodu"]}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Beden:</span>
-                          {item.Beden}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                      {item.Envanter} adet
-                    </Badge>
-                  </div>
-                ))}
+                {(() => {
+                  // SKU bazında birleştirme
+                  const skuGroups = mediumStock.reduce((acc, item) => {
+                    const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        Marka: item.Marka,
+                        "Ürün Kodu": item["Ürün Kodu"],
+                        "Ürün Grubu": item["Ürün Grubu"],
+                        "Renk Kodu": item["Renk Kodu"],
+                        bedenler: [],
+                        totalEnvanter: 0
+                      };
+                    }
+                    acc[key].bedenler.push({ beden: item.Beden, envanter: parseInt(item.Envanter) || 0 });
+                    acc[key].totalEnvanter += parseInt(item.Envanter) || 0;
+                    return acc;
+                  }, {});
+
+                  return Object.values(skuGroups)
+                    .filter(item => {
+                      const brandMatch = !noStockBrandFilter || 
+                        (item.Marka?.toString().toLowerCase() || "").includes(noStockBrandFilter.toLowerCase());
+                      const productCodeMatch = !noStockProductCodeFilter || 
+                        (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(noStockProductCodeFilter.toLowerCase());
+                      return brandMatch && productCodeMatch;
+                    })
+                    .map((item, index) => (
+                      <MediumStockItem key={index} item={item} index={index} />
+                    ));
+                })()}
               </div>
             </ScrollArea>
           </CardContent>
@@ -702,6 +843,9 @@ export default function DashboardPage() {
                       count: number;
                     }>);
 
+                    // Toplam ürün çeşidi sayısını hesaplama
+                    const totalUniqueProducts = new Set(brandProducts.map(item => item["Ürün Kodu"])).size;
+
                     return (
                       <div className="bg-white p-4 rounded-lg shadow-lg border">
                         <p className="font-medium text-gray-900 mb-2">{datum.id}</p>
@@ -711,18 +855,30 @@ export default function DashboardPage() {
                             <span className="text-sm text-gray-600">Toplam Stok:</span>
                             <span className="text-sm font-medium">{datum.value} adet</span>
                           </div>
+                          <div className="flex items-center gap-2 ml-5">
+                            <span className="text-sm text-gray-600">Toplam Çeşit:</span>
+                            <span className="text-sm font-medium">{totalUniqueProducts} ürün</span>
+                          </div>
                           <div className="text-sm text-gray-600 mt-2 border-t pt-2">
                             <p className="font-medium mb-1">Ürün Grubu Dağılımı:</p>
                             <div className="space-y-1">
-                              {Object.entries(productGroups).map(([group, data], index) => (
-                                <div key={index} className="flex items-center justify-between">
-                                  <span>{group}:</span>
-                                  <div className="flex gap-2">
-                                    <span className="text-gray-900">{data.total} adet</span>
-                                    <span className="text-gray-500">({data.count} çeşit)</span>
-                                  </div>
-                                </div>
-                              ))}
+                              {Object.entries(productGroups)
+                                .sort(([, a], [, b]) => b.total - a.total)
+                                .map(([group, data], index) => {
+                                  const percentage = ((data.total / datum.value) * 100).toFixed(1);
+                                  return (
+                                    <div key={index} className="flex items-center justify-between">
+                                      <span>{group}:</span>
+                                      <div className="flex gap-2 items-center">
+                                        <span className="text-gray-900">{data.total} adet</span>
+                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs py-0 h-4">
+                                          %{percentage}
+                                        </Badge>
+                                        <span className="text-gray-500">({data.count} çeşit)</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </div>
                         </div>
