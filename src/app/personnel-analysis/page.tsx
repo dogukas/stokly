@@ -7,6 +7,7 @@ import { ResponsivePie } from "@nivo/pie";
 import { Package2, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
+import { TopProductsList } from "./top-products";
 
 // Excel verisi için tip tanımı
 interface SalesData {
@@ -546,6 +547,9 @@ export default function PersonnelAnalysisPage() {
           </Card>
         </div>
       </div>
+
+      {/* En Çok Satan Ürünler Listeleri */}
+      <TopProductsList />
     </div>
   );
 } 
