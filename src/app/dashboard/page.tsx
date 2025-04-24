@@ -14,8 +14,21 @@ import { useState } from "react";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+// Bileşenler için tip tanımlamaları
+interface StockItemProps {
+  item: {
+    Marka: string;
+    "Ürün Kodu": string;
+    "Ürün Grubu": string;
+    "Renk Kodu": string;
+    bedenler: Array<{ beden: string; envanter: number }>;
+    totalEnvanter: number;
+  };
+  index: number;
+}
+
 // LowStockItem bileşeni oluşturuluyor
-const LowStockItem = ({ item, index }) => {
+const LowStockItem = ({ item, index }: StockItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
   return (
@@ -64,7 +77,7 @@ const LowStockItem = ({ item, index }) => {
 };
 
 // HighStockItem bileşeni oluşturuluyor
-const HighStockItem = ({ item, index }) => {
+const HighStockItem = ({ item, index }: StockItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
   return (
@@ -113,7 +126,7 @@ const HighStockItem = ({ item, index }) => {
 };
 
 // MediumStockItem bileşeni oluşturuluyor
-const MediumStockItem = ({ item, index }) => {
+const MediumStockItem = ({ item, index }: StockItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
   return (
@@ -506,7 +519,16 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {(() => {
                   // SKU bazında birleştirme
-                  const skuGroups = lowStock.reduce((acc, item) => {
+                  interface GroupedItem {
+                    Marka: string;
+                    "Ürün Kodu": string;
+                    "Ürün Grubu": string;
+                    "Renk Kodu": string;
+                    bedenler: Array<{ beden: string; envanter: number }>;
+                    totalEnvanter: number;
+                  }
+                  
+                  const skuGroups = lowStock.reduce((acc: Record<string, GroupedItem>, item) => {
                     const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
                     if (!acc[key]) {
                       acc[key] = {
@@ -576,7 +598,16 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {(() => {
                   // SKU bazında birleştirme
-                  const skuGroups = highStock.reduce((acc, item) => {
+                  interface GroupedItem {
+                    Marka: string;
+                    "Ürün Kodu": string;
+                    "Ürün Grubu": string;
+                    "Renk Kodu": string;
+                    bedenler: Array<{ beden: string; envanter: number }>;
+                    totalEnvanter: number;
+                  }
+                  
+                  const skuGroups = highStock.reduce((acc: Record<string, GroupedItem>, item) => {
                     const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
                     if (!acc[key]) {
                       acc[key] = {
@@ -646,7 +677,16 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {(() => {
                   // SKU bazında birleştirme
-                  const skuGroups = mediumStock.reduce((acc, item) => {
+                  interface GroupedItem {
+                    Marka: string;
+                    "Ürün Kodu": string;
+                    "Ürün Grubu": string;
+                    "Renk Kodu": string;
+                    bedenler: Array<{ beden: string; envanter: number }>;
+                    totalEnvanter: number;
+                  }
+                  
+                  const skuGroups = mediumStock.reduce((acc: Record<string, GroupedItem>, item) => {
                     const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
                     if (!acc[key]) {
                       acc[key] = {
