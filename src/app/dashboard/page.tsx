@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Package2, TrendingDown, TrendingUp, AlertCircle, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -177,17 +178,40 @@ const MediumStockItem = ({ item, index }: StockItemProps) => {
 export default function DashboardPage() {
   const stockData: StockItem[] = useStockStore((state) => state.stockData);
   const salesData = useSalesStore((state) => state.salesData);
+  
+  // Düşük Stok Filtreleme state'leri
   const [brandFilter, setBrandFilter] = useState("");
   const [productCodeFilter, setProductCodeFilter] = useState("");
+  const [productGroupFilter, setProductGroupFilter] = useState("");
+  const [colorCodeFilter, setColorCodeFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
   const [showLowStockFilter, setShowLowStockFilter] = useState(false);
-  const [showHighStockFilter, setShowHighStockFilter] = useState(false);
-  const [showNoStockFilter, setShowNoStockFilter] = useState(false);
+  
+  // Yüksek Stok Filtreleme state'leri
   const [highStockBrandFilter, setHighStockBrandFilter] = useState("");
   const [highStockProductCodeFilter, setHighStockProductCodeFilter] = useState("");
-  const [noStockBrandFilter, setNoStockBrandFilter] = useState("");
-  const [noStockProductCodeFilter, setNoStockProductCodeFilter] = useState("");
+  const [highStockProductGroupFilter, setHighStockProductGroupFilter] = useState("");
+  const [highStockColorCodeFilter, setHighStockColorCodeFilter] = useState("");
+  const [highStockSizeFilter, setHighStockSizeFilter] = useState("");
+  const [showHighStockFilter, setShowHighStockFilter] = useState(false);
+  
+  // Orta Adetli Stok Filtreleme state'leri
+  const [mediumStockBrandFilter, setMediumStockBrandFilter] = useState("");
+  const [mediumStockProductCodeFilter, setMediumStockProductCodeFilter] = useState("");
+  const [mediumStockProductGroupFilter, setMediumStockProductGroupFilter] = useState("");
+  const [mediumStockColorCodeFilter, setMediumStockColorCodeFilter] = useState("");
+  const [mediumStockSizeFilter, setMediumStockSizeFilter] = useState("");
+  const [showMediumStockFilter, setShowMediumStockFilter] = useState(false);
+  
+  // Diğer state'ler
   const [showProductGroupFilter, setShowProductGroupFilter] = useState(false);
   const [productGroupNameFilter, setProductGroupNameFilter] = useState("");
+
+  // Benzersiz markaları, ürün gruplarını ve renk kodlarını elde etme
+  const uniqueBrands = [...new Set(stockData.map(item => item.Marka))].sort();
+  const uniqueProductGroups = [...new Set(stockData.map(item => item["Ürün Grubu"]))].sort();
+  const uniqueColorCodes = [...new Set(stockData.map(item => item["Renk Kodu"]))].sort();
+  const uniqueSizes = [...new Set(stockData.map(item => item.Beden))].sort();
 
   // Toplam stok ve benzersiz ürün sayıları
   const totalInventory = stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
@@ -416,6 +440,65 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  // Ayakkabı Top 10 Listesi için logik
+  interface ShoeSaleItem {
+    sku: string;
+    brand: string;
+    productCode: string;
+    colorCode: string;
+    quantity: number;
+    revenue: number;
+  }
+
+  // Sadece ayakkabı ürün grubu olan ürünleri filtrele
+  const shoeOnlySalesData = salesData.filter(item => 
+    item["Ürün Grubu"]?.toLowerCase() === "ayakkabı" || 
+    item["Ürün Grubu"]?.toLowerCase() === "ayakkabi"
+  );
+
+  // SKU'ya göre ayakkabı satışlarını grupla
+  const shoeSalesBySku = shoeOnlySalesData.reduce((acc, item) => {
+    const sku = `${item["Ürün Kodu"]}-${item["Renk Kodu"]}`;
+    
+    if (!acc[sku]) {
+      acc[sku] = {
+        sku,
+        brand: item.Marka,
+        productCode: item["Ürün Kodu"],
+        colorCode: item["Renk Kodu"],
+        quantity: 0,
+        revenue: 0
+      };
+    }
+    
+    const quantity = item["Satış Miktarı"] || 0;
+    let salesAmount = 0;
+    
+    try {
+      if (typeof item["Satış (VD)"] === 'string') {
+        salesAmount = parseFloat(item["Satış (VD)"].replace('.', '').replace(',', '.')) || 0;
+      } else if (typeof item["Satış (VD)"] === 'number') {
+        salesAmount = item["Satış (VD)"];
+      }
+    } catch (error) {
+      console.error("Satış verisi dönüştürülemedi:", item["Satış (VD)"]);
+    }
+    
+    acc[sku].quantity += quantity;
+    acc[sku].revenue += salesAmount;
+    
+    return acc;
+  }, {} as Record<string, ShoeSaleItem>);
+
+  // Top 10 ayakkabıları al
+  const top10Shoes = Object.values(shoeSalesBySku)
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 10);
+
+  // Toplam ayakkabı satışı ve geliri
+  const totalShoeQuantity = top10Shoes.reduce((sum, item) => sum + item.quantity, 0);
+  const totalShoeRevenue = top10Shoes.reduce((sum, item) => sum + item.revenue, 0);
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold">Stok Yönetim Paneli</h1>
@@ -499,18 +582,73 @@ export default function DashboardPage() {
             </div>
             {showLowStockFilter && (
               <div className="mt-2 space-y-2">
-                <Input
-                  placeholder="Marka ara..."
-                  value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                  className="h-8 text-sm"
-                />
-                <Input
-                  placeholder="Ürün kodu ara..."
-                  value={productCodeFilter}
-                  onChange={(e) => setProductCodeFilter(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Marka</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-orange-400 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                      value={brandFilter}
+                      onChange={(e) => setBrandFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueBrands.map(brand => (
+                        <option key={brand} value={brand}>{brand}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Ürün Grubu</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-orange-400 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                      value={productGroupFilter}
+                      onChange={(e) => setProductGroupFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueProductGroups.map(group => (
+                        <option key={group} value={group}>{group}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Renk Kodu</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-orange-400 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                      value={colorCodeFilter}
+                      onChange={(e) => setColorCodeFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueColorCodes.map(color => (
+                        <option key={color} value={color}>{color}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Beden</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-orange-400 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                      value={sizeFilter}
+                      onChange={(e) => setSizeFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueSizes.map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Ürün Kodu</label>
+                  <Input
+                    placeholder="Ürün kodu ara..."
+                    value={productCodeFilter}
+                    onChange={(e) => setProductCodeFilter(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
               </div>
             )}
           </CardHeader>
@@ -547,11 +685,27 @@ export default function DashboardPage() {
 
                   return Object.values(skuGroups)
                     .filter(item => {
+                      // Marka filtresi
                       const brandMatch = !brandFilter || 
-                        (item.Marka?.toString().toLowerCase() || "").includes(brandFilter.toLowerCase());
+                        item.Marka === brandFilter;
+                      
+                      // Ürün kodu filtresi
                       const productCodeMatch = !productCodeFilter || 
                         (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(productCodeFilter.toLowerCase());
-                      return brandMatch && productCodeMatch;
+                      
+                      // Ürün grubu filtresi
+                      const productGroupMatch = !productGroupFilter || 
+                        item["Ürün Grubu"] === productGroupFilter;
+                      
+                      // Renk kodu filtresi
+                      const colorCodeMatch = !colorCodeFilter || 
+                        item["Renk Kodu"] === colorCodeFilter;
+                      
+                      // Beden filtresi
+                      const sizeMatch = !sizeFilter || 
+                        item.bedenler.some(b => b.beden === sizeFilter);
+                      
+                      return brandMatch && productCodeMatch && productGroupMatch && colorCodeMatch && sizeMatch;
                     })
                     .map((item, index) => (
                       <LowStockItem key={index} item={item} index={index} />
@@ -578,18 +732,73 @@ export default function DashboardPage() {
             </div>
             {showHighStockFilter && (
               <div className="mt-2 space-y-2">
-                <Input
-                  placeholder="Marka ara..."
-                  value={highStockBrandFilter}
-                  onChange={(e) => setHighStockBrandFilter(e.target.value)}
-                  className="h-8 text-sm"
-                />
-                <Input
-                  placeholder="Ürün kodu ara..."
-                  value={highStockProductCodeFilter}
-                  onChange={(e) => setHighStockProductCodeFilter(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Marka</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-green-400 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+                      value={highStockBrandFilter}
+                      onChange={(e) => setHighStockBrandFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueBrands.map(brand => (
+                        <option key={brand} value={brand}>{brand}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Ürün Grubu</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-green-400 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+                      value={highStockProductGroupFilter}
+                      onChange={(e) => setHighStockProductGroupFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueProductGroups.map(group => (
+                        <option key={group} value={group}>{group}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Renk Kodu</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-green-400 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+                      value={highStockColorCodeFilter}
+                      onChange={(e) => setHighStockColorCodeFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueColorCodes.map(color => (
+                        <option key={color} value={color}>{color}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Beden</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-green-400 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+                      value={highStockSizeFilter}
+                      onChange={(e) => setHighStockSizeFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueSizes.map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Ürün Kodu</label>
+                  <Input
+                    placeholder="Ürün kodu ara..."
+                    value={highStockProductCodeFilter}
+                    onChange={(e) => setHighStockProductCodeFilter(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
               </div>
             )}
           </CardHeader>
@@ -626,11 +835,27 @@ export default function DashboardPage() {
 
                   return Object.values(skuGroups)
                     .filter(item => {
+                      // Marka filtresi
                       const brandMatch = !highStockBrandFilter || 
-                        (item.Marka?.toString().toLowerCase() || "").includes(highStockBrandFilter.toLowerCase());
+                        item.Marka === highStockBrandFilter;
+                      
+                      // Ürün kodu filtresi
                       const productCodeMatch = !highStockProductCodeFilter || 
                         (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(highStockProductCodeFilter.toLowerCase());
-                      return brandMatch && productCodeMatch;
+                      
+                      // Ürün grubu filtresi
+                      const productGroupMatch = !highStockProductGroupFilter || 
+                        item["Ürün Grubu"] === highStockProductGroupFilter;
+                      
+                      // Renk kodu filtresi
+                      const colorCodeMatch = !highStockColorCodeFilter || 
+                        item["Renk Kodu"] === highStockColorCodeFilter;
+                      
+                      // Beden filtresi
+                      const sizeMatch = !highStockSizeFilter || 
+                        item.bedenler.some(b => b.beden === highStockSizeFilter);
+                      
+                      return brandMatch && productCodeMatch && productGroupMatch && colorCodeMatch && sizeMatch;
                     })
                     .map((item, index) => (
                       <HighStockItem key={index} item={item} index={index} />
@@ -649,26 +874,81 @@ export default function DashboardPage() {
                 Orta Adetli Stok Listesi
               </CardTitle>
               <button
-                onClick={() => setShowNoStockFilter(!showNoStockFilter)}
+                onClick={() => setShowMediumStockFilter(!showMediumStockFilter)}
                 className="p-2 hover:bg-blue-100 rounded-full transition-colors"
               >
-                <Filter className={`h-4 w-4 ${showNoStockFilter ? 'text-blue-600' : 'text-gray-400'}`} />
+                <Filter className={`h-4 w-4 ${showMediumStockFilter ? 'text-blue-600' : 'text-gray-400'}`} />
               </button>
             </div>
-            {showNoStockFilter && (
+            {showMediumStockFilter && (
               <div className="mt-2 space-y-2">
-                <Input
-                  placeholder="Marka ara..."
-                  value={noStockBrandFilter}
-                  onChange={(e) => setNoStockBrandFilter(e.target.value)}
-                  className="h-8 text-sm"
-                />
-                <Input
-                  placeholder="Ürün kodu ara..."
-                  value={noStockProductCodeFilter}
-                  onChange={(e) => setNoStockProductCodeFilter(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Marka</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      value={mediumStockBrandFilter}
+                      onChange={(e) => setMediumStockBrandFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueBrands.map(brand => (
+                        <option key={brand} value={brand}>{brand}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Ürün Grubu</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      value={mediumStockProductGroupFilter}
+                      onChange={(e) => setMediumStockProductGroupFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueProductGroups.map(group => (
+                        <option key={group} value={group}>{group}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Renk Kodu</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      value={mediumStockColorCodeFilter}
+                      onChange={(e) => setMediumStockColorCodeFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueColorCodes.map(color => (
+                        <option key={color} value={color}>{color}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Beden</label>
+                    <select 
+                      className="w-full h-8 text-sm rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      value={mediumStockSizeFilter}
+                      onChange={(e) => setMediumStockSizeFilter(e.target.value)}
+                    >
+                      <option value="">Tümü</option>
+                      {uniqueSizes.map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Ürün Kodu</label>
+                  <Input
+                    placeholder="Ürün kodu ara..."
+                    value={mediumStockProductCodeFilter}
+                    onChange={(e) => setMediumStockProductCodeFilter(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
               </div>
             )}
           </CardHeader>
@@ -705,11 +985,27 @@ export default function DashboardPage() {
 
                   return Object.values(skuGroups)
                     .filter(item => {
-                      const brandMatch = !noStockBrandFilter || 
-                        (item.Marka?.toString().toLowerCase() || "").includes(noStockBrandFilter.toLowerCase());
-                      const productCodeMatch = !noStockProductCodeFilter || 
-                        (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(noStockProductCodeFilter.toLowerCase());
-                      return brandMatch && productCodeMatch;
+                      // Marka filtresi
+                      const brandMatch = !mediumStockBrandFilter || 
+                        item.Marka === mediumStockBrandFilter;
+                      
+                      // Ürün kodu filtresi
+                      const productCodeMatch = !mediumStockProductCodeFilter || 
+                        (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(mediumStockProductCodeFilter.toLowerCase());
+                      
+                      // Ürün grubu filtresi
+                      const productGroupMatch = !mediumStockProductGroupFilter || 
+                        item["Ürün Grubu"] === mediumStockProductGroupFilter;
+                      
+                      // Renk kodu filtresi
+                      const colorCodeMatch = !mediumStockColorCodeFilter || 
+                        item["Renk Kodu"] === mediumStockColorCodeFilter;
+                      
+                      // Beden filtresi
+                      const sizeMatch = !mediumStockSizeFilter || 
+                        item.bedenler.some(b => b.beden === mediumStockSizeFilter);
+                      
+                      return brandMatch && productCodeMatch && productGroupMatch && colorCodeMatch && sizeMatch;
                     })
                     .map((item, index) => (
                       <MediumStockItem key={index} item={item} index={index} />
@@ -1198,6 +1494,109 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+      
+      {/* Marka Stok Detayları - Kaydırılabilir Liste */}
+      <div className="mt-8">
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Marka Stok Detayları</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Tüm markaların stok bilgileri
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px] w-full pr-4">
+              <div className="space-y-2">
+                {Object.entries(brandInventory)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([brand, total], index) => {
+                    // Toplam içindeki yüzde hesaplama
+                    const percentage = ((total / totalInventory) * 100).toFixed(1);
+                    
+                    // Marka için toplam ürün çeşidi sayısı
+                    const brandProducts = stockData.filter(item => item.Marka === brand);
+                    const uniqueProductCount = new Set(brandProducts.map(item => item["Ürün Kodu"])).size;
+                    
+                    // Renk hesaplama (ilk 6 marka için COLORS dizisinden, diğerleri için rastgele)
+                    const color = index < COLORS.length ? COLORS[index] : `#${Math.floor(Math.random()*16777215).toString(16)}`;
+                    
+                    return (
+                      <div key={index} className="flex items-center border border-gray-100 rounded-lg bg-white p-3 hover:bg-gray-50">
+                        <div className="w-4 h-4 rounded-full mr-3" style={{ backgroundColor: color }}></div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">{brand}</div>
+                          <div className="flex items-center text-xs text-gray-500 mt-1">
+                            <span>{uniqueProductCount} çeşit ürün</span>
+                            <span className="mx-1">•</span>
+                            <span>Ortalama {(total / uniqueProductCount).toFixed(1)} stok/ürün</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1 px-4">
+                          <div className="flex items-center">
+                            <div className="w-full bg-gray-200 rounded-full h-2 mr-3">
+                              <div className="h-2 rounded-full" style={{ 
+                                width: `${percentage}%`,
+                                backgroundColor: color
+                              }}></div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700 w-12">%{percentage}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-900">{total}</div>
+                          <div className="text-xs text-gray-500">adet stok</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Ayakkabı Top 10 Listesi */}
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle>Ayakkabı Top 10 Listesi</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            En çok satan 10 ayakkabı modeli
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sıra</TableHead>
+                  <TableHead>Marka</TableHead>
+                  <TableHead>Ürün Kodu</TableHead>
+                  <TableHead>Renk</TableHead>
+                  <TableHead>Satış Adedi</TableHead>
+                  <TableHead>Oran</TableHead>
+                  <TableHead>Gelir</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {top10Shoes.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{item.brand}</TableCell>
+                    <TableCell>{item.productCode}</TableCell>
+                    <TableCell>{item.colorCode}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{((item.quantity / totalShoeQuantity) * 100).toFixed(1)}%</TableCell>
+                    <TableCell>{item.revenue.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 } 

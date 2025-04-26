@@ -207,29 +207,76 @@ export default function PersonnelAnalysisPage() {
               </div>
               En Çok Satan Marka
             </CardTitle>
-            <p className="text-sm text-muted-foreground text-center">Adede göre en çok satan markalar</p>
+            <p className="text-sm text-muted-foreground text-center">Ciroya göre en çok satan markalar</p>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-3 mx-auto">
               {(() => {
-                const topBrands = Object.entries(brandDistribution)
-                  .sort(([,a], [,b]) => b - a)
+                // Marka bazlı ciro dağılımı hesapla
+                const brandSalesAmount = salesData.reduce((acc, item) => {
+                  const brand = item.marka;
+                  const salesAmount = Number(item.satisFiyati) * Number(item.satisAdeti) || 0;
+                  
+                  if (!acc[brand]) {
+                    acc[brand] = {
+                      totalAmount: 0,
+                      totalQuantity: 0
+                    };
+                  }
+                  
+                  acc[brand].totalAmount += salesAmount;
+                  acc[brand].totalQuantity += Number(item.satisAdeti) || 0;
+                  
+                  return acc;
+                }, {} as Record<string, { totalAmount: number; totalQuantity: number }>);
+                
+                // Ciro bazında sırala ve ilk 3'ü al
+                const topBrands = Object.entries(brandSalesAmount)
+                  .sort(([, a], [, b]) => b.totalAmount - a.totalAmount)
                   .slice(0, 3);
                 
-                return topBrands.map(([brand, quantity], index) => (
-                  <div key={brand} className="flex items-center justify-between group hover:bg-purple-50 p-1.5 rounded-md transition-colors w-full">
-                    <div className="flex items-center gap-2">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full ${index === 0 ? 'bg-purple-600' : index === 1 ? 'bg-purple-500' : 'bg-purple-400'} text-white`}>
-                        <span className="text-xs font-bold">{index + 1}</span>
+                const totalAmount = Object.values(brandSalesAmount).reduce((sum, data) => sum + data.totalAmount, 0);
+                
+                return topBrands.map(([brand, data], index) => {
+                  const percentage = (data.totalAmount / totalAmount) * 100;
+                  
+                  return (
+                    <div key={brand} className="flex flex-col p-2 rounded-md hover:bg-purple-50 group border border-purple-100 transition-colors w-full">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`flex h-6 w-6 items-center justify-center rounded-full ${index === 0 ? 'bg-purple-600' : index === 1 ? 'bg-purple-500' : 'bg-purple-400'} text-white`}>
+                            <span className="text-xs font-bold">{index + 1}</span>
+                          </div>
+                          <span className="font-medium group-hover:text-purple-700 transition-colors">{brand}</span>
+                        </div>
                       </div>
-                      <span className="font-medium group-hover:text-purple-700 transition-colors">{brand}</span>
+                      <div className="ml-8 flex flex-col">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Toplam Ciro:</span>
+                          <span className="font-bold text-purple-700">
+                            {new Intl.NumberFormat('tr-TR', { 
+                              style: 'currency', 
+                              currency: 'TRY',
+                              maximumFractionDigits: 0 
+                            }).format(data.totalAmount)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Toplam Adet:</span>
+                          <span className="font-bold text-purple-600">
+                            {new Intl.NumberFormat('tr-TR').format(data.totalQuantity)} adet
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                        </div>
+                        <div className="text-right text-xs text-gray-500 mt-0.5">
+                          Oran: %{percentage.toFixed(1)}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <span className="font-bold text-purple-700">{new Intl.NumberFormat('tr-TR').format(quantity)}</span>
-                      <span className="text-sm text-muted-foreground ml-1">adet</span>
-                    </div>
-                  </div>
-                ));
+                  );
+                });
               })()}
             </div>
           </CardContent>
@@ -399,15 +446,21 @@ export default function PersonnelAnalysisPage() {
                       id: item.name,
                       label: item.name,
                       value: item["Satış Adedi"],
+                      salesAmount: item["Satış Tutarı"],
                       personelData: salesData.reduce((acc, sale) => {
                         if (sale.personelAdi === item.name) {
                           if (!acc[sale.marka]) {
-                            acc[sale.marka] = 0;
+                            acc[sale.marka] = {
+                              quantity: 0,
+                              revenue: 0
+                            };
                           }
-                          acc[sale.marka] += sale.satisAdeti;
+                          acc[sale.marka].quantity += sale.satisAdeti;
+                          acc[sale.marka].revenue += sale.satisAdeti * sale.satisFiyati;
                         }
                         return acc;
-                      }, {} as Record<string, number>)
+                      }, {} as Record<string, { quantity: number; revenue: number }>),
+                      totalSales: item["Satış Tutarı"]
                     }))}
                     margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
                     innerRadius={0.5}
@@ -426,15 +479,37 @@ export default function PersonnelAnalysisPage() {
                     tooltip={({ datum }) => (
                       <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-200">
                         <div className="font-bold mb-2">{datum.label}</div>
-                        <div className="text-sm mb-1">Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)}</div>
+                        <div className="text-sm mb-1">Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)} adet</div>
+                        <div className="text-sm mb-3">
+                          Toplam Ciro: {new Intl.NumberFormat('tr-TR', { 
+                            style: 'currency', 
+                            currency: 'TRY',
+                            maximumFractionDigits: 0 
+                          }).format(datum.data.salesAmount)}
+                        </div>
                         <div className="border-t border-gray-200 mt-2 pt-2">
                           <div className="font-semibold mb-1">Marka Bazlı Dağılım:</div>
                           {Object.entries(datum.data.personelData)
-                            .sort(([, a], [, b]) => b - a)
-                            .map(([marka, adet]) => (
-                            <div key={marka} className="flex justify-between text-sm">
-                              <span>{marka}:</span>
-                              <span className="ml-4 font-medium">{new Intl.NumberFormat('tr-TR').format(adet)} adet</span>
+                            .sort(([, a], [, b]) => b.quantity - a.quantity)
+                            .map(([marka, data]) => (
+                            <div key={marka} className="mb-2">
+                              <div className="font-medium text-gray-800">{marka}</div>
+                              <div className="grid grid-cols-2 gap-1 pl-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Satış Adedi:</span>
+                                  <span className="ml-2 font-medium">{new Intl.NumberFormat('tr-TR').format(data.quantity)} adet</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Ciro:</span>
+                                  <span className="ml-2 font-medium text-green-600">
+                                    {new Intl.NumberFormat('tr-TR', { 
+                                      style: 'currency', 
+                                      currency: 'TRY',
+                                      maximumFractionDigits: 0 
+                                    }).format(data.revenue)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -483,17 +558,31 @@ export default function PersonnelAnalysisPage() {
 
                     return sortedBrands.map(([brand, quantity], index) => {
                       const percentage = (quantity / statistics.totalQuantity) * 100;
-                      const brandDetails = salesData.filter(sale => sale.marka === brand).reduce((acc, sale) => {
-                        acc.totalAmount += sale.satisFiyati;
-                        if (!acc.personelSales[sale.personelAdi]) {
-                          acc.personelSales[sale.personelAdi] = 0;
+                      
+                      // Bu markanın tüm satışlarını filtrele
+                      const filteredSales = salesData.filter(sale => sale.marka === brand);
+                      
+                      // Toplam ciro
+                      const totalRevenue = filteredSales.reduce((total, sale) => {
+                        return total + (sale.satisAdeti * sale.satisFiyati);
+                      }, 0);
+                      
+                      // Personel bazlı satışlar - hem adet hem ciro bilgisi topluyoruz
+                      const personelData = filteredSales.reduce((acc, sale) => {
+                        if (!acc[sale.personelAdi]) {
+                          acc[sale.personelAdi] = {
+                            quantity: 0,
+                            revenue: 0
+                          };
                         }
-                        acc.personelSales[sale.personelAdi] += sale.satisAdeti;
+                        acc[sale.personelAdi].quantity += sale.satisAdeti;
+                        acc[sale.personelAdi].revenue += sale.satisAdeti * sale.satisFiyati;
                         return acc;
-                      }, { totalAmount: 0, personelSales: {} as Record<string, number> });
+                      }, {} as Record<string, { quantity: number; revenue: number }>);
 
-                      const topSeller = Object.entries(brandDetails.personelSales)
-                        .sort(([,a], [,b]) => b - a)[0];
+                      // Adede göre en çok satan personel
+                      const topSeller = Object.entries(personelData)
+                        .sort(([,a], [,b]) => b.quantity - a.quantity)[0];
 
                       return (
                         <div
@@ -507,33 +596,53 @@ export default function PersonnelAnalysisPage() {
                           />
                           
                           {/* İçerik */}
-                          <div className="relative flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <span className="text-sm font-bold">{index + 1}</span>
-                              </div>
-                              <div>
-                                <h3 className="font-medium">{brand}</h3>
-                                <div className="text-sm text-muted-foreground">
-                                  En çok satan: {topSeller?.[0]} ({new Intl.NumberFormat('tr-TR').format(topSeller?.[1] || 0)} adet)
+                          <div className="relative flex flex-col gap-2">
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                  <span className="text-sm font-bold">{index + 1}</span>
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">{brand}</h3>
+                                  <div className="text-sm text-muted-foreground">
+                                    En çok satan: {topSeller[0]} ({new Intl.NumberFormat('tr-TR').format(topSeller[1].quantity)} adet)
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="text-right">
+                              
                               <div className="flex items-center gap-2">
-                                <div className="text-xl font-bold text-green-600">
+                                <div className="text-xl font-bold text-slate-700">
                                   {new Intl.NumberFormat('tr-TR').format(quantity)} adet
                                 </div>
                                 <div className="text-sm font-semibold text-primary">
                                   {percentage.toFixed(1)}%
                                 </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                Ciro: {new Intl.NumberFormat('tr-TR', { 
-                                  style: 'currency', 
-                                  currency: 'TRY',
-                                  maximumFractionDigits: 0 
-                                }).format(brandDetails.totalAmount)}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                              {/* Personel Ciro Kartı */}
+                              <div className="bg-green-50 p-2 rounded border border-green-100">
+                                <div className="text-xs text-gray-600 mb-1">Personel Cirosu</div>
+                                <div className="text-base font-bold text-green-600">
+                                  {new Intl.NumberFormat('tr-TR', { 
+                                    style: 'currency', 
+                                    currency: 'TRY',
+                                    maximumFractionDigits: 0 
+                                  }).format(topSeller[1].revenue)}
+                                </div>
+                              </div>
+                              
+                              {/* Toplam Ciro Kartı */}
+                              <div className="bg-blue-50 p-2 rounded border border-blue-100">
+                                <div className="text-xs text-gray-600 mb-1">Toplam Ciro</div>
+                                <div className="text-base font-bold text-blue-600">
+                                  {new Intl.NumberFormat('tr-TR', { 
+                                    style: 'currency', 
+                                    currency: 'TRY',
+                                    maximumFractionDigits: 0 
+                                  }).format(totalRevenue)}
+                                </div>
                               </div>
                             </div>
                           </div>
