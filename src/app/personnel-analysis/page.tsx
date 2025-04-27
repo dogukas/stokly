@@ -374,20 +374,6 @@ export default function PersonnelAnalysisPage() {
                     .map((item, index) => {
                       const percentage = (item["Satış Tutarı"] / totalAmount) * 100;
                       
-                      // ASP (Ortalama Satış Fiyatı) hesapla
-                      const asp = item["Satış Adedi"] > 0 
-                        ? item["Satış Tutarı"] / item["Satış Adedi"] 
-                        : 0;
-                      
-                      // UPT (Unit Per Transaction) hesapla - Her personel için satış adeti / satır sayısı
-                      const personelSatislar = salesData.filter(sale => sale.personelAdi === item.name);
-                      
-                      // Doğru UPT hesaplaması: Toplam satılan ürün sayısı / Toplam işlem sayısı
-                      // Bu metrikte 'işlem' satır sayısı, yani farklı satış kayıtlarının sayısı olarak değerlendirilir
-                      const upt = personelSatislar.length > 0
-                        ? item["Satış Adedi"] / personelSatislar.length
-                        : 0;
-                      
                       return (
                         <div
                           key={index}
@@ -424,18 +410,6 @@ export default function PersonnelAnalysisPage() {
                                 <div className="text-sm font-semibold text-primary">
                                   {percentage.toFixed(1)}%
                                 </div>
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                ASP: {new Intl.NumberFormat('tr-TR', { 
-                                  style: 'currency', 
-                                  currency: 'TRY',
-                                  maximumFractionDigits: 0 
-                                }).format(asp)}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                UPT: {new Intl.NumberFormat('tr-TR', {
-                                  maximumFractionDigits: 2 
-                                }).format(upt)}
                               </div>
                             </div>
                           </div>
