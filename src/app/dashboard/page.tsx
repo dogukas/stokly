@@ -440,65 +440,6 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Ayakkabı Top 10 Listesi için logik
-  interface ShoeSaleItem {
-    sku: string;
-    brand: string;
-    productCode: string;
-    colorCode: string;
-    quantity: number;
-    revenue: number;
-  }
-
-  // Sadece ayakkabı ürün grubu olan ürünleri filtrele
-  const shoeOnlySalesData = salesData.filter(item => 
-    item["Ürün Grubu"]?.toLowerCase() === "ayakkabı" || 
-    item["Ürün Grubu"]?.toLowerCase() === "ayakkabi"
-  );
-
-  // SKU'ya göre ayakkabı satışlarını grupla
-  const shoeSalesBySku = shoeOnlySalesData.reduce((acc, item) => {
-    const sku = `${item["Ürün Kodu"]}-${item["Renk Kodu"]}`;
-    
-    if (!acc[sku]) {
-      acc[sku] = {
-        sku,
-        brand: item.Marka,
-        productCode: item["Ürün Kodu"],
-        colorCode: item["Renk Kodu"],
-        quantity: 0,
-        revenue: 0
-      };
-    }
-    
-    const quantity = item["Satış Miktarı"] || 0;
-    let salesAmount = 0;
-    
-    try {
-      if (typeof item["Satış (VD)"] === 'string') {
-        salesAmount = parseFloat(item["Satış (VD)"].replace('.', '').replace(',', '.')) || 0;
-      } else if (typeof item["Satış (VD)"] === 'number') {
-        salesAmount = item["Satış (VD)"];
-      }
-    } catch (error) {
-      console.error("Satış verisi dönüştürülemedi:", item["Satış (VD)"]);
-    }
-    
-    acc[sku].quantity += quantity;
-    acc[sku].revenue += salesAmount;
-    
-    return acc;
-  }, {} as Record<string, ShoeSaleItem>);
-
-  // Top 10 ayakkabıları al
-  const top10Shoes = Object.values(shoeSalesBySku)
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 10);
-
-  // Toplam ayakkabı satışı ve geliri
-  const totalShoeQuantity = top10Shoes.reduce((sum, item) => sum + item.quantity, 0);
-  const totalShoeRevenue = top10Shoes.reduce((sum, item) => sum + item.revenue, 0);
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold">Stok Yönetim Paneli</h1>
@@ -1557,46 +1498,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Ayakkabı Top 10 Listesi */}
-      <Card className="col-span-2">
-        <CardHeader>
-          <CardTitle>Ayakkabı Top 10 Listesi</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            En çok satan 10 ayakkabı modeli
-          </p>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sıra</TableHead>
-                  <TableHead>Marka</TableHead>
-                  <TableHead>Ürün Kodu</TableHead>
-                  <TableHead>Renk</TableHead>
-                  <TableHead>Satış Adedi</TableHead>
-                  <TableHead>Oran</TableHead>
-                  <TableHead>Gelir</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {top10Shoes.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{item.brand}</TableCell>
-                    <TableCell>{item.productCode}</TableCell>
-                    <TableCell>{item.colorCode}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{((item.quantity / totalShoeQuantity) * 100).toFixed(1)}%</TableCell>
-                    <TableCell>{item.revenue.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
     </div>
   );
 } 

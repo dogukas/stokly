@@ -25,6 +25,7 @@ interface ProductSummary {
   urunAdi: string;
   toplamAdet: number;
   toplamTutar: number;
+  urunGrubu?: string;
 }
 
 export function TopProductsList() {
@@ -46,11 +47,33 @@ export function TopProductsList() {
 
   // Excel verilerini işleme fonksiyonu
   const processExcelData = (salesData: SalesDataItem[]) => {
+    // Log ekleyelim
+    console.log(`Toplam veri sayısı: ${salesData.length}`);
+    
+    // Ayakkabı markalarını tanımla
+    const shoeMarks = [
+      'ADIDAS', 'NIKE', 'NEW BALANCE', 'CONVERSE', 'PUMA', 
+      'REEBOK', 'VANS', 'ASICS', 'UNDER ARMOUR', 'SKECHERS'
+    ];
+    
+    // Önişleme: Tüm verilerde, eğer ürün grubu belirtilmemiş ama marka ayakkabı markasıysa,
+    // o ürünü "Ayakkabı" olarak etiketle
+    const processedData = salesData.map(item => {
+      const newItem = {...item};
+      
+      // Ürün grubu yoksa veya boşsa ve marka ayakkabı markasıysa
+      if ((!newItem.urunGrubu || newItem.urunGrubu.trim() === '') && 
+          shoeMarks.some(mark => newItem.marka.toUpperCase().includes(mark))) {
+        newItem.urunGrubu = 'Ayakkabı';
+      }
+      return newItem;
+    });
+    
     // Ürünleri kodlarına göre gruplandır
     const productsBySku: Record<string, ProductSummary> = {};
     
     // Tüm ürünleri birleştir
-    salesData.forEach(item => {
+    processedData.forEach(item => {
       const key = `${item.urunKodu}-${item.renkKodu}`;
       
       // Eğer ürün daha önce eklenmemişse, ekle
@@ -62,7 +85,8 @@ export function TopProductsList() {
           renkKodu: item.renkKodu || "-",
           urunAdi: item.urunAdi || `${item.marka} - ${item.urunKodu}`,
           toplamAdet: 0,
-          toplamTutar: 0
+          toplamTutar: 0,
+          urunGrubu: item.urunGrubu || ""
         };
       }
       
@@ -73,11 +97,51 @@ export function TopProductsList() {
     
     // Tüm ürünleri diziye dönüştür
     const allProducts = Object.values(productsBySku);
+    console.log(`Toplam benzersiz ürün sayısı: ${allProducts.length}`);
     
     // Ayakkabı ürünlerini filtrele
-    const shoes = allProducts.filter(product => 
-      isShoe(product.marka, product.urunKodu)
-    );
+    const shoes = allProducts.filter(product => {
+      const isShoeProduct = isShoe(product.marka, product.urunKodu, product.urunGrubu || "");
+      
+      // Debug - ayakkabı olarak belirlenen ürünleri kontrol et
+      if (isShoeProduct) {
+        console.log(`Ayakkabı olarak belirlenen: ${product.marka} - ${product.urunKodu} - Grup: ${product.urunGrubu}`);
+      }
+      
+      return isShoeProduct;
+    });
+    
+    console.log(`Ayakkabı olarak belirlenen ürün sayısı: ${shoes.length}`);
+    
+    // Hiç ayakkabı bulunamadıysa, bilinen ayakkabı markalarına ait ürünleri de dahil et
+    if (shoes.length === 0) {
+      console.log("Hiç ayakkabı bulunamadı, ayakkabı markaları kullanılarak yeniden filtreleniyor");
+      
+      const shoesByBrand = allProducts.filter(product => 
+        shoeMarks.some(mark => product.marka.toUpperCase().includes(mark))
+      );
+      
+      if (shoesByBrand.length > 0) {
+        console.log(`Marka bazlı ${shoesByBrand.length} ayakkabı bulundu`);
+        
+        // Adet bazında sırala ve ilk 10'u al
+        const sortedShoesByQuantity = [...shoesByBrand]
+          .sort((a, b) => b.toplamAdet - a.toplamAdet)
+          .slice(0, 10)
+          .map((item, index) => ({...item, sira: index + 1}));
+        
+        // Ciro bazında sırala ve ilk 10'u al
+        const sortedShoesByRevenue = [...shoesByBrand]
+          .sort((a, b) => b.toplamTutar - a.toplamTutar)
+          .slice(0, 10)
+          .map((item, index) => ({...item, sira: index + 1}));
+        
+        // State'i güncelle
+        setTopShoesByQuantity(sortedShoesByQuantity);
+        setTopShoesByRevenue(sortedShoesByRevenue);
+        return;
+      }
+    }
     
     // Adet bazında sırala ve ilk 10'u al
     const sortedShoesByQuantity = [...shoes]
@@ -97,17 +161,32 @@ export function TopProductsList() {
   };
   
   // Ayakkabı olup olmadığını kontrol eden yardımcı fonksiyon
-  const isShoe = (marka: string, urunKodu: string): boolean => {
+  const isShoe = (marka: string, urunKodu: string, urunGrubu: string): boolean => {
     const shoeMarks = [
       'ADIDAS', 'NIKE', 'NEW BALANCE', 'CONVERSE', 'PUMA', 
       'REEBOK', 'VANS', 'ASICS', 'UNDER ARMOUR', 'SKECHERS'
     ];
     
+    // Ürün grubu kontrol (öncelikli kriter)
+    if (urunGrubu && (
+        urunGrubu.toLowerCase().includes('ayakkabı') || 
+        urunGrubu.toLowerCase().includes('ayakkabi') ||
+        urunGrubu.toLowerCase().includes('shoe') ||
+        urunGrubu.toLowerCase().includes('sneak') ||
+        urunGrubu.toLowerCase().includes('bot') ||
+        urunGrubu.toLowerCase().includes('boot') ||
+        urunGrubu.toLowerCase().includes('foot')
+      )) {
+      return true;
+    }
+    
     // Marka ayakkabı markası ise veya ürün kodu ayakkabı koşullarını sağlıyorsa
     return shoeMarks.some(mark => marka.toUpperCase().includes(mark)) || 
-           /^[A-Z0-9]{5,10}$/.test(urunKodu) ||
            urunKodu.toUpperCase().includes('SHOE') ||
-           urunKodu.toUpperCase().includes('AYAKKABI');
+           urunKodu.toUpperCase().includes('AYAKKABI') ||
+           urunKodu.toUpperCase().includes('BOT') ||
+           urunKodu.toUpperCase().includes('BOOT') ||
+           urunKodu.toUpperCase().includes('SNEAK');
   };
 
   return (
