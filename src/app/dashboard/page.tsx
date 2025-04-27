@@ -404,6 +404,15 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  // Marka bazında satış adedi dağılımı analizi
+  const brandSalesQuantityData = salesData.reduce((acc, item) => {
+    const brand = item.Marka;
+    const salesQuantity = Number(item["Satış Miktarı"]) || 0;
+    
+    acc[brand] = (acc[brand] || 0) + salesQuantity;
+    return acc;
+  }, {} as Record<string, number>);
+
   // Marka bazında satış dağılımı için Nivo formatı
   const brandSalesPieData = Object.entries(brandSalesData).map(([brand, total]) => ({
     id: brand,
@@ -430,6 +439,15 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  // Sezon bazında satış adedi dağılımı analizi
+  const seasonSalesQuantityData = salesData.reduce((acc, item) => {
+    const season = item.Sezon || 'Belirtilmemiş';
+    const salesQuantity = Number(item["Satış Miktarı"]) || 0;
+    
+    acc[season] = (acc[season] || 0) + salesQuantity;
+    return acc;
+  }, {} as Record<string, number>);
+
   // Ürün grubu bazında satış dağılımı analizi
   const productGroupSalesData = salesData.reduce((acc, item) => {
     const group = item["Ürün Grubu"] || 'Belirtilmemiş';
@@ -446,6 +464,15 @@ export default function DashboardPage() {
     }
 
     acc[group] = (acc[group] || 0) + salesAmount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Ürün grubu bazında satış adedi dağılımı analizi
+  const productGroupSalesQuantityData = salesData.reduce((acc, item) => {
+    const group = item["Ürün Grubu"] || 'Belirtilmemiş';
+    const salesQuantity = Number(item["Satış Miktarı"]) || 0;
+    
+    acc[group] = (acc[group] || 0) + salesQuantity;
     return acc;
   }, {} as Record<string, number>);
 
@@ -1021,6 +1048,9 @@ export default function DashboardPage() {
                             <div className="flex gap-2 text-sm text-blue-600">
                               <span>{total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
                             </div>
+                            <div className="flex justify-center items-center text-xs text-blue-600 mt-1 w-full">
+                              {brandSalesQuantityData[brand]?.toLocaleString('tr-TR') || '0'} adet satış
+                            </div>
                           </div>
                           <Badge variant="outline" className="bg-blue-100 text-blue-700">
                             %{percentage}
@@ -1056,6 +1086,9 @@ export default function DashboardPage() {
                             <div className="flex gap-2 text-sm text-green-600">
                               <span>{total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
                             </div>
+                            <div className="flex justify-center items-center text-xs text-green-600 mt-1 w-full">
+                              {seasonSalesQuantityData[season]?.toLocaleString('tr-TR') || '0'} adet satış
+                            </div>
                           </div>
                           <Badge variant="outline" className="bg-green-100 text-green-700">
                             %{percentage}
@@ -1090,6 +1123,9 @@ export default function DashboardPage() {
                             <p className="font-medium text-purple-900">{group}</p>
                             <div className="flex gap-2 text-sm text-purple-600">
                               <span>{total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</span>
+                            </div>
+                            <div className="flex justify-center items-center text-xs text-purple-600 mt-1 w-full">
+                              {productGroupSalesQuantityData[group]?.toLocaleString('tr-TR') || '0'} adet satış
                             </div>
                           </div>
                           <Badge variant="outline" className="bg-purple-100 text-purple-700">

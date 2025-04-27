@@ -309,17 +309,31 @@ export default function PersonnelAnalysisPage() {
                   arcLinkLabelsColor={{ from: 'color' }}
                   arcLabelsSkipAngle={10}
                   arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-                  tooltip={({ datum }) => (
-                    <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-200">
-                      <div className="font-bold mb-2">{datum.label}</div>
-                      <div className="text-sm mb-1">
-                        Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)} adet
+                  tooltip={({ datum }) => {
+                    // Marka için toplam ciro hesaplaması
+                    const brandSales = salesData
+                      .filter(item => item.marka === datum.label)
+                      .reduce((total, item) => total + (item.satisAdeti * item.satisFiyati), 0);
+                      
+                    return (
+                      <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-200">
+                        <div className="font-bold mb-2">{datum.label}</div>
+                        <div className="text-sm mb-1">
+                          Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)} adet
+                        </div>
+                        <div className="text-sm mb-1 text-green-600 font-medium">
+                          Toplam Ciro: {new Intl.NumberFormat('tr-TR', { 
+                            style: 'currency', 
+                            currency: 'TRY',
+                            maximumFractionDigits: 0 
+                          }).format(brandSales)}
+                        </div>
+                        <div className="text-sm text-primary font-medium">
+                          Oran: {((datum.value / statistics.totalQuantity) * 100).toFixed(1)}%
+                        </div>
                       </div>
-                      <div className="text-sm text-primary font-medium">
-                        Oran: {((datum.value / statistics.totalQuantity) * 100).toFixed(1)}%
-                      </div>
-                    </div>
-                  )}
+                    )
+                  }}
                   legends={[
                     {
                       anchor: 'bottom',
@@ -477,45 +491,53 @@ export default function PersonnelAnalysisPage() {
                     arcLinkLabelsColor={{ from: 'color' }}
                     arcLabelsSkipAngle={10}
                     arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-                    tooltip={({ datum }) => (
-                      <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-200">
-                        <div className="font-bold mb-2">{datum.label}</div>
-                        <div className="text-sm mb-1">Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)} adet</div>
-                        <div className="text-sm mb-3">
-                          Toplam Ciro: {new Intl.NumberFormat('tr-TR', { 
-                            style: 'currency', 
-                            currency: 'TRY',
-                            maximumFractionDigits: 0 
-                          }).format(datum.data.salesAmount)}
-                        </div>
-                        <div className="border-t border-gray-200 mt-2 pt-2">
-                          <div className="font-semibold mb-1">Marka Bazlı Dağılım:</div>
-                          {Object.entries(datum.data.personelData)
-                            .sort(([, a], [, b]) => b.quantity - a.quantity)
-                            .map(([marka, data]) => (
-                            <div key={marka} className="mb-2">
-                              <div className="font-medium text-gray-800">{marka}</div>
-                              <div className="grid grid-cols-2 gap-1 pl-2">
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">Satış Adedi:</span>
-                                  <span className="ml-2 font-medium">{new Intl.NumberFormat('tr-TR').format(data.quantity)} adet</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">Ciro:</span>
-                                  <span className="ml-2 font-medium text-green-600">
-                                    {new Intl.NumberFormat('tr-TR', { 
-                                      style: 'currency', 
-                                      currency: 'TRY',
-                                      maximumFractionDigits: 0 
-                                    }).format(data.revenue)}
-                                  </span>
+                    tooltip={({ datum }) => {
+                      const totalSalesCount = performanceBarData.reduce((sum, item) => sum + item["Satış Adedi"], 0);
+                      const percentageOfTotal = ((datum.value / totalSalesCount) * 100).toFixed(1);
+                      
+                      return (
+                        <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-300 max-w-[600px]">
+                          <div className="font-bold mb-2">{datum.label}</div>
+                          <div className="text-sm mb-1">Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)} adet</div>
+                          <div className="text-sm mb-1">
+                            Toplam Ciro: {new Intl.NumberFormat('tr-TR', { 
+                              style: 'currency', 
+                              currency: 'TRY',
+                              maximumFractionDigits: 0 
+                            }).format(datum.data.salesAmount)}
+                          </div>
+                          <div className="text-sm mb-2">
+                            Satış Oranı: {percentageOfTotal}%
+                          </div>
+                          <div className="border-t border-gray-200 mt-2 pt-2">
+                            <div className="font-semibold mb-1">Marka Bazlı Dağılım:</div>
+                            {Object.entries(datum.data.personelData)
+                              .sort(([, a], [, b]) => b.quantity - a.quantity)
+                              .map(([marka, data]) => (
+                              <div key={marka} className="mb-2">
+                                <div className="font-medium text-gray-800">{marka}</div>
+                                <div className="grid grid-cols-2 gap-1 pl-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Satış Adedi:</span>
+                                    <span className="ml-2 font-medium">{new Intl.NumberFormat('tr-TR').format(data.quantity)} adet</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Ciro:</span>
+                                    <span className="ml-2 font-medium text-green-600">
+                                      {new Intl.NumberFormat('tr-TR', { 
+                                        style: 'currency', 
+                                        currency: 'TRY',
+                                        maximumFractionDigits: 0 
+                                      }).format(data.revenue)}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    }}
                     legends={[
                       {
                         anchor: 'bottom',
