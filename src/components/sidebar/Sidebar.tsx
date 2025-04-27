@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  Users
+  Users,
+  BarChart
 } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
@@ -45,6 +46,12 @@ export function Sidebar({ className }: SidebarProps) {
       title: "Personel Analiz",
       icon: <Users size={20} />,
       href: "/personnel-analysis",
+      badge: "Yeni",
+    },
+    {
+      title: "Personel Ciro ve KPI",
+      icon: <BarChart size={20} />,
+      href: "/personnel-kpi",
       badge: "Yeni",
     }
   ]
