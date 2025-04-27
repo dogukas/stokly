@@ -8,6 +8,7 @@ import { Package2, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
 import { TopProductsList } from "./top-products";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 // Excel verisi için tip tanımı
 interface SalesData {
@@ -546,43 +547,54 @@ export default function PersonnelAnalysisPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>En Çok Satan 5 Marka</CardTitle>
+              <CardTitle>Ciro Bazında En İyi 5 Marka</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3">
                   {(() => {
-                    const sortedBrands = Object.entries(brandDistribution)
-                      .sort(([,a], [,b]) => b - a)
+                    // Markaların ciro bazında hesaplanması ve sıralanması
+                    const brandSalesRevenue = salesData.reduce((acc, sale) => {
+                      const brand = sale.marka;
+                      if (!acc[brand]) {
+                        acc[brand] = {
+                          quantity: 0,
+                          revenue: 0
+                        };
+                      }
+                      acc[brand].quantity += sale.satisAdeti;
+                      acc[brand].revenue += sale.satisAdeti * sale.satisFiyati;
+                      return acc;
+                    }, {} as Record<string, { quantity: number; revenue: number }>);
+                    
+                    // Ciro bazında sıralama ve ilk 5'i alma
+                    const sortedBrandsByCiro = Object.entries(brandSalesRevenue)
+                      .sort(([, a], [, b]) => b.revenue - a.revenue)
                       .slice(0, 5);
 
-                    return sortedBrands.map(([brand, quantity], index) => {
-                      const percentage = (quantity / statistics.totalQuantity) * 100;
-                      
-                      // Bu markanın tüm satışlarını filtrele
-                      const filteredSales = salesData.filter(sale => sale.marka === brand);
-                      
-                      // Toplam ciro
-                      const totalRevenue = filteredSales.reduce((total, sale) => {
-                        return total + (sale.satisAdeti * sale.satisFiyati);
-                      }, 0);
+                    return sortedBrandsByCiro.map(([brand, data], index) => {
+                      // Bu markanın toplam cirosunun yüzdesi
+                      const totalRevenue = Object.values(brandSalesRevenue).reduce((sum, brand) => sum + brand.revenue, 0);
+                      const percentage = (data.revenue / totalRevenue) * 100;
                       
                       // Personel bazlı satışlar - hem adet hem ciro bilgisi topluyoruz
-                      const personelData = filteredSales.reduce((acc, sale) => {
-                        if (!acc[sale.personelAdi]) {
-                          acc[sale.personelAdi] = {
-                            quantity: 0,
-                            revenue: 0
-                          };
-                        }
-                        acc[sale.personelAdi].quantity += sale.satisAdeti;
-                        acc[sale.personelAdi].revenue += sale.satisAdeti * sale.satisFiyati;
-                        return acc;
-                      }, {} as Record<string, { quantity: number; revenue: number }>);
+                      const personelData = salesData
+                        .filter(sale => sale.marka === brand)
+                        .reduce((acc, sale) => {
+                          if (!acc[sale.personelAdi]) {
+                            acc[sale.personelAdi] = {
+                              quantity: 0,
+                              revenue: 0
+                            };
+                          }
+                          acc[sale.personelAdi].quantity += sale.satisAdeti;
+                          acc[sale.personelAdi].revenue += sale.satisAdeti * sale.satisFiyati;
+                          return acc;
+                        }, {} as Record<string, { quantity: number; revenue: number }>);
 
-                      // Adede göre en çok satan personel
+                      // En çok satan personel (adet bazında)
                       const topSeller = Object.entries(personelData)
-                        .sort(([,a], [,b]) => b.quantity - a.quantity)[0];
+                        .sort(([, a], [, b]) => b.quantity - a.quantity)[0];
 
                       return (
                         <div
@@ -612,7 +624,11 @@ export default function PersonnelAnalysisPage() {
                               
                               <div className="flex items-center gap-2">
                                 <div className="text-xl font-bold text-slate-700">
-                                  {new Intl.NumberFormat('tr-TR').format(quantity)} adet
+                                  {new Intl.NumberFormat('tr-TR', { 
+                                    style: 'currency', 
+                                    currency: 'TRY',
+                                    maximumFractionDigits: 0 
+                                  }).format(data.revenue)}
                                 </div>
                                 <div className="text-sm font-semibold text-primary">
                                   {percentage.toFixed(1)}%
@@ -633,15 +649,11 @@ export default function PersonnelAnalysisPage() {
                                 </div>
                               </div>
                               
-                              {/* Toplam Ciro Kartı */}
+                              {/* Toplam Adet Kartı */}
                               <div className="bg-blue-50 p-2 rounded border border-blue-100">
-                                <div className="text-xs text-gray-600 mb-1">Toplam Ciro</div>
+                                <div className="text-xs text-gray-600 mb-1">Toplam Adet</div>
                                 <div className="text-base font-bold text-blue-600">
-                                  {new Intl.NumberFormat('tr-TR', { 
-                                    style: 'currency', 
-                                    currency: 'TRY',
-                                    maximumFractionDigits: 0 
-                                  }).format(totalRevenue)}
+                                  {new Intl.NumberFormat('tr-TR').format(data.quantity)} adet
                                 </div>
                               </div>
                             </div>
