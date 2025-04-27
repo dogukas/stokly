@@ -214,30 +214,39 @@ export default function DashboardPage() {
   const uniqueSizes = [...new Set(stockData.map(item => item.Beden))].sort();
 
   // Toplam stok ve benzersiz ürün sayıları
+  const totalProducts = stockData.length;
   const totalInventory = stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
   const uniqueProducts = new Set(stockData.map(item => item["Ürün Kodu"])).size;
 
   // Stok durumu analizleri - Birbirinden bağımsız hesaplamalar
   const lowStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock >= 1 && stock <= 3;
-  });
-
-  const highStock = stockData.filter(item => {
-    const stock = parseInt(item.Envanter) || 0;
-    return stock >= 6 && stock <= 9;
+    return stock >= 0 && stock <= 3;
   });
 
   const mediumStock = stockData.filter(item => {
     const stock = parseInt(item.Envanter) || 0;
-    return stock >= 4 && stock <= 5;
+    return stock >= 4 && stock <= 6;
   });
 
-  // Her bir durum için toplam ürün sayısına göre yüzde hesaplama
-  const totalProducts = stockData.length;
-  const lowStockPercentage = ((lowStock.length / totalProducts) * 100).toFixed(1);
-  const highStockPercentage = ((highStock.length / totalProducts) * 100).toFixed(1);
-  const mediumStockPercentage = ((mediumStock.length / totalProducts) * 100).toFixed(1);
+  const highStock = stockData.filter(item => {
+    const stock = parseInt(item.Envanter) || 0;
+    return stock >= 7;
+  });
+
+  // Düşük, orta ve yüksek stok kategorileri için envanter miktarı toplamları
+  const lowStockCount = lowStock.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
+  const mediumStockCount = mediumStock.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
+  const highStockCount = highStock.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
+  
+  // Her kategorinin toplam envanter içindeki yüzdelik payları
+  const lowStockPercentage = ((lowStockCount / totalInventory) * 100).toFixed(1);
+  const mediumStockPercentage = ((mediumStockCount / totalInventory) * 100).toFixed(1);
+  const highStockPercentage = ((highStockCount / totalInventory) * 100).toFixed(1);
+
+  // Toplam stok kontrolü - tüm kategorilerin toplamı, toplam stok miktarına eşit olmalı
+  const totalCategorizedStock = lowStockCount + mediumStockCount + highStockCount;
+  const allCategoriesPercentage = (totalCategorizedStock / totalInventory * 100).toFixed(1);
 
   // Marka bazında envanter dağılımı - Tüm ürünleri dahil et
   const brandInventory = stockData.reduce((acc, item) => {
@@ -454,6 +463,13 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalInventory}</div>
             <p className="text-xs text-muted-foreground">Tüm ürünlerin toplamı</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalCategorizedStock === totalInventory ? (
+                <span className="text-green-600">✓ Doğrulandı ({allCategoriesPercentage}%)</span>
+              ) : (
+                <span className="text-red-600">⚠ Fark var: {totalInventory - totalCategorizedStock} adet</span>
+              )}
+            </p>
           </CardContent>
         </Card>
 
@@ -474,8 +490,8 @@ export default function DashboardPage() {
             <TrendingDown className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{lowStock.length}</div>
-            <p className="text-xs text-orange-600">Toplam ürünlerin {lowStockPercentage}%'i</p>
+            <div className="text-2xl font-bold text-orange-600">{lowStockCount}</div>
+            <p className="text-xs text-orange-600">Toplam stoğun {lowStockPercentage}%'i</p>
             <p className="text-xs text-orange-600 mt-1">Toplam {new Set(lowStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
           </CardContent>
         </Card>
@@ -486,8 +502,8 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{highStock.length}</div>
-            <p className="text-xs text-green-600">Toplam ürünlerin {highStockPercentage}%'i</p>
+            <div className="text-2xl font-bold text-green-600">{highStockCount}</div>
+            <p className="text-xs text-green-600">Toplam stoğun {highStockPercentage}%'i</p>
             <p className="text-xs text-green-600 mt-1">Toplam {new Set(highStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
           </CardContent>
         </Card>
@@ -498,8 +514,8 @@ export default function DashboardPage() {
             <Package2 className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{mediumStock.length}</div>
-            <p className="text-xs text-blue-600">Toplam ürünlerin {mediumStockPercentage}%'i</p>
+            <div className="text-2xl font-bold text-blue-600">{mediumStockCount}</div>
+            <p className="text-xs text-blue-600">Toplam stoğun {mediumStockPercentage}%'i</p>
             <p className="text-xs text-blue-600 mt-1">Toplam {new Set(mediumStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
           </CardContent>
         </Card>
@@ -608,6 +624,10 @@ export default function DashboardPage() {
                   }
                   
                   const skuGroups = lowStock.reduce((acc: Record<string, GroupedItem>, item) => {
+                    // Sadece 0-3 adet arasındaki ürünleri dahil et
+                    const envanter = parseInt(item.Envanter) || 0;
+                    if (envanter < 0 || envanter > 3) return acc;
+                    
                     const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
                     if (!acc[key]) {
                       acc[key] = {
@@ -619,13 +639,16 @@ export default function DashboardPage() {
                         totalEnvanter: 0
                       };
                     }
-                    acc[key].bedenler.push({ beden: item.Beden, envanter: parseInt(item.Envanter) || 0 });
-                    acc[key].totalEnvanter += parseInt(item.Envanter) || 0;
+                    acc[key].bedenler.push({ beden: item.Beden, envanter: envanter });
+                    acc[key].totalEnvanter += envanter;
                     return acc;
                   }, {});
 
                   return Object.values(skuGroups)
                     .filter(item => {
+                      // Toplam envanteri 0-3 arası olan ürünler için tekrar kontrol
+                      if (item.totalEnvanter < 0 || item.totalEnvanter > 3) return false;
+                      
                       // Marka filtresi
                       const brandMatch = !brandFilter || 
                         item.Marka === brandFilter;
@@ -758,6 +781,10 @@ export default function DashboardPage() {
                   }
                   
                   const skuGroups = highStock.reduce((acc: Record<string, GroupedItem>, item) => {
+                    // Sadece 7 ve üzeri ürünleri dahil et
+                    const envanter = parseInt(item.Envanter) || 0;
+                    if (envanter < 7) return acc;
+                    
                     const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
                     if (!acc[key]) {
                       acc[key] = {
@@ -769,17 +796,20 @@ export default function DashboardPage() {
                         totalEnvanter: 0
                       };
                     }
-                    acc[key].bedenler.push({ beden: item.Beden, envanter: parseInt(item.Envanter) || 0 });
-                    acc[key].totalEnvanter += parseInt(item.Envanter) || 0;
+                    acc[key].bedenler.push({ beden: item.Beden, envanter: envanter });
+                    acc[key].totalEnvanter += envanter;
                     return acc;
                   }, {});
 
                   return Object.values(skuGroups)
                     .filter(item => {
+                      // Toplam envanteri 7 ve üzerinde olan ürünler için tekrar kontrol
+                      if (item.totalEnvanter < 7) return false;
+                      
                       // Marka filtresi
                       const brandMatch = !highStockBrandFilter || 
                         item.Marka === highStockBrandFilter;
-                      
+                        
                       // Ürün kodu filtresi
                       const productCodeMatch = !highStockProductCodeFilter || 
                         (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(highStockProductCodeFilter.toLowerCase());
@@ -908,6 +938,10 @@ export default function DashboardPage() {
                   }
                   
                   const skuGroups = mediumStock.reduce((acc: Record<string, GroupedItem>, item) => {
+                    // Sadece 4-6 adet arasındaki ürünleri dahil et
+                    const envanter = parseInt(item.Envanter) || 0;
+                    if (envanter < 4 || envanter > 6) return acc;
+                    
                     const key = `${item.Marka}-${item["Ürün Kodu"]}-${item["Ürün Grubu"]}-${item["Renk Kodu"]}`;
                     if (!acc[key]) {
                       acc[key] = {
@@ -919,17 +953,20 @@ export default function DashboardPage() {
                         totalEnvanter: 0
                       };
                     }
-                    acc[key].bedenler.push({ beden: item.Beden, envanter: parseInt(item.Envanter) || 0 });
-                    acc[key].totalEnvanter += parseInt(item.Envanter) || 0;
+                    acc[key].bedenler.push({ beden: item.Beden, envanter: envanter });
+                    acc[key].totalEnvanter += envanter;
                     return acc;
                   }, {});
 
                   return Object.values(skuGroups)
                     .filter(item => {
+                      // Toplam envanteri 4-6 arası olan ürünler için tekrar kontrol
+                      if (item.totalEnvanter < 4 || item.totalEnvanter > 6) return false;
+                      
                       // Marka filtresi
                       const brandMatch = !mediumStockBrandFilter || 
                         item.Marka === mediumStockBrandFilter;
-                      
+                        
                       // Ürün kodu filtresi
                       const productCodeMatch = !mediumStockProductCodeFilter || 
                         (item["Ürün Kodu"]?.toString().toLowerCase() || "").includes(mediumStockProductCodeFilter.toLowerCase());
