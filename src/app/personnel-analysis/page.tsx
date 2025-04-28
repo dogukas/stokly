@@ -87,7 +87,7 @@ export default function PersonnelAnalysisPage() {
 
   // İstatistikleri hesaplama
   const statistics = {
-    totalSales: salesData.reduce((sum, item) => sum + ((Number(item.satisFiyati) * Number(item.satisAdeti)) || 0), 0),
+    totalSales: salesData.reduce((sum, item) => sum + (Number(item.satisFiyati) || 0), 0),
     totalQuantity: salesData.reduce((sum, item) => sum + (Number(item.satisAdeti) || 0), 0),
     topBrand: (() => {
       const brandCounts = salesData.reduce((acc, item) => {
@@ -123,7 +123,7 @@ export default function PersonnelAnalysisPage() {
         totalQuantity: 0
       };
     }
-    acc[personelAdi].totalSales += (Number(item.satisFiyati) * Number(item.satisAdeti)) || 0;
+    acc[personelAdi].totalSales += Number(item.satisFiyati) || 0;
     acc[personelAdi].totalQuantity += Number(item.satisAdeti) || 0;
     return acc;
   }, {} as Record<string, { totalSales: number; totalQuantity: number }>);
@@ -216,7 +216,7 @@ export default function PersonnelAnalysisPage() {
                 // Marka bazlı ciro dağılımı hesapla
                 const brandSalesAmount = salesData.reduce((acc, item) => {
                   const brand = item.marka;
-                  const salesAmount = Number(item.satisFiyati) * Number(item.satisAdeti) || 0;
+                  const salesAmount = Number(item.satisFiyati) || 0;
                   
                   if (!acc[brand]) {
                     acc[brand] = {
