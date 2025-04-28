@@ -313,7 +313,7 @@ export default function PersonnelAnalysisPage() {
                     // Marka için toplam ciro hesaplaması
                     const brandSales = salesData
                       .filter(item => item.marka === datum.label)
-                      .reduce((total, item) => total + (item.satisAdeti * item.satisFiyati), 0);
+                      .reduce((total, item) => total + item.satisFiyati, 0);
                       
                     return (
                       <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-200">
@@ -445,7 +445,7 @@ export default function PersonnelAnalysisPage() {
                             };
                           }
                           acc[sale.marka].quantity += sale.satisAdeti;
-                          acc[sale.marka].revenue += sale.satisAdeti * sale.satisFiyati;
+                          acc[sale.marka].revenue += sale.satisFiyati;
                         }
                         return acc;
                       }, {} as Record<string, { quantity: number; revenue: number }>),
@@ -559,7 +559,7 @@ export default function PersonnelAnalysisPage() {
                         };
                       }
                       acc[brand].quantity += sale.satisAdeti;
-                      acc[brand].revenue += sale.satisAdeti * sale.satisFiyati;
+                      acc[brand].revenue += sale.satisFiyati;
                       return acc;
                     }, {} as Record<string, { quantity: number; revenue: number }>);
                     
@@ -584,7 +584,7 @@ export default function PersonnelAnalysisPage() {
                             };
                           }
                           acc[sale.personelAdi].quantity += sale.satisAdeti;
-                          acc[sale.personelAdi].revenue += sale.satisAdeti * sale.satisFiyati;
+                          acc[sale.personelAdi].revenue += sale.satisFiyati;
                           return acc;
                         }, {} as Record<string, { quantity: number; revenue: number }>);
 
