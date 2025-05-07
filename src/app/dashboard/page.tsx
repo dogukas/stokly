@@ -216,7 +216,7 @@ export default function DashboardPage() {
   // Toplam stok ve benzersiz ürün sayıları
   const totalProducts = stockData.length;
   const totalInventory = stockData.reduce((sum, item) => sum + (parseInt(item.Envanter) || 0), 0);
-  const uniqueProducts = new Set(stockData.map(item => item["Ürün Kodu"])).size;
+  const uniqueProducts = new Set(stockData.map(item => `${item["Ürün Kodu"]}-${item["Renk Kodu"]}`)).size;
 
   // Stok durumu analizleri - Birbirinden bağımsız hesaplamalar
   const lowStock = stockData.filter(item => {
@@ -519,7 +519,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{lowStockCount}</div>
             <p className="text-xs text-orange-600">Toplam stoğun {lowStockPercentage}%'i</p>
-            <p className="text-xs text-orange-600 mt-1">Toplam {new Set(lowStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
+            <p className="text-xs text-orange-600 mt-1">Toplam {new Set(lowStock.map(item => `${item["Ürün Kodu"]}-${item["Renk Kodu"]}`)).size} farklı SKU</p>
           </CardContent>
         </Card>
 
@@ -531,7 +531,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{highStockCount}</div>
             <p className="text-xs text-green-600">Toplam stoğun {highStockPercentage}%'i</p>
-            <p className="text-xs text-green-600 mt-1">Toplam {new Set(highStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
+            <p className="text-xs text-green-600 mt-1">Toplam {new Set(highStock.map(item => `${item["Ürün Kodu"]}-${item["Renk Kodu"]}`)).size} farklı SKU</p>
           </CardContent>
         </Card>
 
@@ -543,7 +543,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{mediumStockCount}</div>
             <p className="text-xs text-blue-600">Toplam stoğun {mediumStockPercentage}%'i</p>
-            <p className="text-xs text-blue-600 mt-1">Toplam {new Set(mediumStock.map(item => item["Ürün Kodu"])).size} farklı SKU</p>
+            <p className="text-xs text-blue-600 mt-1">Toplam {new Set(mediumStock.map(item => `${item["Ürün Kodu"]}-${item["Renk Kodu"]}`)).size} farklı SKU</p>
           </CardContent>
         </Card>
       </div>
