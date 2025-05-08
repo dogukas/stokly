@@ -8,7 +8,6 @@ import { Package2, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
 import { TopProductsList } from "./top-products";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 // Excel verisi için tip tanımı
 interface SalesData {
@@ -470,44 +469,55 @@ export default function PersonnelAnalysisPage() {
                       const percentageOfTotal = ((datum.value / totalSalesCount) * 100).toFixed(1);
                       
                       return (
-                        <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-300 max-w-[600px]">
-                          <div className="font-bold mb-2">{datum.label}</div>
-                          <div className="text-sm mb-1">Toplam Satış: {new Intl.NumberFormat('tr-TR').format(datum.value)} adet</div>
-                          <div className="text-sm mb-1">
-                            Toplam Ciro: {new Intl.NumberFormat('tr-TR', { 
-                              style: 'currency', 
-                              currency: 'TRY',
-                              maximumFractionDigits: 0 
-                            }).format(datum.data.salesAmount)}
+                        <div className="bg-white p-2 shadow-lg rounded-lg border border-gray-300 max-w-[800px]">
+                          <div className="font-bold mb-0.5 text-base">{datum.label}</div>
+                          <div className="grid grid-cols-3 gap-1 mb-1">
+                            <div className="text-xs p-1 bg-slate-50 rounded">
+                              <span className="text-gray-600 block text-[10px]">Toplam Satış:</span>
+                              <span className="font-semibold text-xs">{new Intl.NumberFormat('tr-TR').format(datum.value)} adet</span>
+                            </div>
+                            <div className="text-xs p-1 bg-green-50 rounded">
+                              <span className="text-gray-600 block text-[10px]">Satış Oranı:</span>
+                              <span className="font-semibold text-xs">{percentageOfTotal}%</span>
+                            </div>
+                            <div className="text-xs p-1 bg-blue-50 rounded">
+                              <span className="text-gray-600 block text-[10px]">Toplam Ciro:</span>
+                              <span className="font-semibold text-xs">
+                                {new Intl.NumberFormat('tr-TR', { 
+                                  style: 'currency', 
+                                  currency: 'TRY',
+                                  maximumFractionDigits: 0 
+                                }).format(datum.data.salesAmount)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-sm mb-2">
-                            Satış Oranı: {percentageOfTotal}%
-                          </div>
-                          <div className="border-t border-gray-200 mt-2 pt-2">
-                            <div className="font-semibold mb-1">Marka Bazlı Dağılım:</div>
-                            {Object.entries(datum.data.personelData)
-                              .sort(([, a], [, b]) => b.quantity - a.quantity)
-                              .map(([marka, data]) => (
-                              <div key={marka} className="mb-2">
-                                <div className="font-medium text-gray-800">{marka}</div>
-                                <div className="grid grid-cols-2 gap-1 pl-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Satış Adedi:</span>
-                                    <span className="ml-2 font-medium">{new Intl.NumberFormat('tr-TR').format(data.quantity)} adet</span>
+                          <div className="border-t border-gray-200 mt-0.5 pt-0.5">
+                            <div className="font-semibold mb-0.5 text-xs">Marka Bazlı Dağılım:</div>
+                            <div className="grid grid-cols-2 gap-1">
+                              {Object.entries(datum.data.personelData)
+                                .sort(([, a], [, b]) => b.quantity - a.quantity)
+                                .map(([marka, data]) => (
+                                  <div key={marka} className="bg-gray-50 p-1 rounded">
+                                    <div className="font-medium text-gray-800 border-b border-gray-200 pb-0.5 mb-0.5 text-xs">{marka}</div>
+                                    <div className="grid grid-cols-2 gap-0.5">
+                                      <div className="flex justify-between text-[10px] items-center">
+                                        <span className="text-gray-600">Satış Adedi:</span>
+                                        <span className="ml-0.5 font-medium">{new Intl.NumberFormat('tr-TR').format(data.quantity)} adet</span>
+                                      </div>
+                                      <div className="flex justify-between text-[10px] items-center">
+                                        <span className="text-gray-600">Ciro:</span>
+                                        <span className="ml-0.5 font-medium text-green-600">
+                                          {new Intl.NumberFormat('tr-TR', { 
+                                            style: 'currency', 
+                                            currency: 'TRY',
+                                            maximumFractionDigits: 0 
+                                          }).format(data.revenue)}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Ciro:</span>
-                                    <span className="ml-2 font-medium text-green-600">
-                                      {new Intl.NumberFormat('tr-TR', { 
-                                        style: 'currency', 
-                                        currency: 'TRY',
-                                        maximumFractionDigits: 0 
-                                      }).format(data.revenue)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                                ))}
+                            </div>
                           </div>
                         </div>
                       );
