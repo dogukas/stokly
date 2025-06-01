@@ -10,11 +10,17 @@ import {
   ChevronRight,
   TrendingUp,
   Users,
-  BarChart
+  BarChart,
+  LogOut,
+  User
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { toast } from "sonner"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
@@ -22,6 +28,27 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Sidebar({ className }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUserEmail(user?.email || null)
+    }
+    getUser()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      toast.success("Çıkış yapıldı")
+      router.push("/auth/login")
+      router.refresh()
+    } catch (error) {
+      toast.error("Çıkış yapılırken bir hata oluştu")
+    }
+  }
 
   const menuItems = [
     {
@@ -121,6 +148,45 @@ export function Sidebar({ className }: SidebarProps) {
           </Link>
         ))}
       </nav>
+
+      {/* User Account & Logout */}
+      <div className="border-t p-2">
+        <div className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground",
+          isCollapsed && "justify-center px-2"
+        )}>
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {userEmail ? userEmail[0].toUpperCase() : <User size={16} />}
+            </AvatarFallback>
+          </Avatar>
+          {!isCollapsed && (
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium truncate">{userEmail || 'Kullanıcı'}</p>
+            </div>
+          )}
+          {!isCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut size={16} />
+            </Button>
+          )}
+        </div>
+        {isCollapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="w-full mt-2 hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut size={16} />
+          </Button>
+        )}
+      </div>
     </div>
   )
 } 

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 // Excel'den gelen veri tipi
 interface SalesDataItem {
@@ -34,16 +35,63 @@ export function TopProductsList() {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
-    // localStorage'dan verileri al
-    const savedData = localStorage.getItem('salesData');
-    if (savedData) {
-      const salesData = JSON.parse(savedData) as SalesDataItem[];
+    fetchSalesData();
+  }, []);
+
+  const fetchSalesData = async () => {
+    try {
+      let allData: SalesDataItem[] = [];
+      const pageSize = 1000;
+
+      const { count, error: countError } = await supabase
+        .from('personnel_sales')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Count error:', countError);
+        throw new Error(`Veri sayısı alınırken hata oluştu: ${countError.message}`);
+      }
+
+      if (!count) {
+        setDataLoaded(true);
+        return;
+      }
+
+      const totalPages = Math.ceil(count / pageSize);
+      
+      const pagePromises = Array.from({ length: totalPages }, (_, index) =>
+        supabase
+          .from('personnel_sales')
+          .select('*')
+          .range(index * pageSize, (index + 1) * pageSize - 1)
+      );
+
+      const results = await Promise.all(pagePromises);
+
+      const errorResult = results.find(result => result.error);
+      if (errorResult?.error) {
+        console.error('Data fetch error:', errorResult.error);
+        throw new Error(`Veri çekerken hata oluştu: ${errorResult.error.message}`);
+      }
+
+      allData = results.flatMap(result => result.data || []).map(item => ({
+        personelAdi: item.personel_adi,
+        marka: item.marka,
+        urunKodu: item.urun_kodu,
+        renkKodu: item.renk_kodu,
+        satisAdeti: Number(item.satis_adeti),
+        satisFiyati: Number(item.satis_fiyati),
+        urunGrubu: item.urun_grubu
+      }));
       
       // Verileri işle
-      processExcelData(salesData);
+      processExcelData(allData);
+      setDataLoaded(true);
+    } catch (error) {
+      console.error('Error fetching data:', error);
       setDataLoaded(true);
     }
-  }, []);
+  };
 
   // Excel verilerini işleme fonksiyonu
   const processExcelData = (salesData: SalesDataItem[]) => {
@@ -215,7 +263,7 @@ export function TopProductsList() {
                   ADET BAZINDA TOP 10
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent>
                 {topShoesByQuantity.length > 0 ? (
                   <div className="rounded-md border overflow-hidden overflow-x-auto">
                     <Table>
@@ -283,7 +331,7 @@ export function TopProductsList() {
                   CİRO BAZINDA TOP 10
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent>
                 {topShoesByRevenue.length > 0 ? (
                   <div className="rounded-md border overflow-hidden overflow-x-auto">
                     <Table>
@@ -343,8 +391,7 @@ export function TopProductsList() {
         ) : (
           <div className="flex items-center justify-center h-64 bg-muted/10 rounded-md">
             <p className="text-muted-foreground text-center">
-              Henüz veri yüklenmedi.<br />
-              Lütfen ana sayfadaki &quot;Excel Yükle&quot; butonunu kullanarak veri yükleyin.
+              Veriler yükleniyor...
             </p>
           </div>
         )}

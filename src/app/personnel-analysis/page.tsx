@@ -8,6 +8,8 @@ import { Package2, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
 import { TopProductsList } from "./top-products";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 // Excel verisi için tip tanımı
 interface SalesData {
@@ -29,58 +31,147 @@ interface ExcelRow {
   satisFiyati: string | number;
 }
 
-export default function PersonnelAnalysisPage() {
-  // State with initial empty array
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
+// Supabase veri tipi
+interface SupabaseSalesData {
+  personel_adi: string;
+  marka: string;
+  urun_kodu: string;
+  renk_kodu: string;
+  satis_adeti: number;
+  satis_fiyati: number;
+}
 
-  // Use effect to load data from localStorage only on client side
+export default function PersonnelAnalysisPage() {
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Use effect to load data from Supabase
   useEffect(() => {
-    const savedData = localStorage.getItem('salesData');
-    if (savedData) {
-      setSalesData(JSON.parse(savedData));
-    }
+    fetchSalesData();
   }, []);
 
-  // Verileri localStorage'a kaydet
-  const updateSalesData = (newData: SalesData[]) => {
-    setSalesData(newData);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('salesData', JSON.stringify(newData));
+  const fetchSalesData = async () => {
+    try {
+      let allData: SalesData[] = [];
+      const pageSize = 1000;
+
+      const { count, error: countError } = await supabase
+        .from('personnel_sales')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Count error:', countError);
+        throw new Error(`Veri sayısı alınırken hata oluştu: ${countError.message}`);
+      }
+
+      if (!count) {
+        setSalesData([]);
+        setLoading(false);
+        return;
+      }
+
+      const totalPages = Math.ceil(count / pageSize);
+      
+      const pagePromises = Array.from({ length: totalPages }, (_, index) =>
+        supabase
+          .from('personnel_sales')
+          .select('*')
+          .range(index * pageSize, (index + 1) * pageSize - 1)
+      );
+
+      const results = await Promise.all(pagePromises);
+
+      const errorResult = results.find(result => result.error);
+      if (errorResult?.error) {
+        console.error('Data fetch error:', errorResult.error);
+        throw new Error(`Veri çekerken hata oluştu: ${errorResult.error.message}`);
+      }
+
+      allData = results.flatMap(result => result.data || []).map(item => ({
+        personelAdi: item.personel_adi,
+        marka: item.marka,
+        urunKodu: item.urun_kodu,
+        renkKodu: item.renk_kodu,
+        satisAdeti: Number(item.satis_adeti),
+        satisFiyati: Number(item.satis_fiyati)
+      }));
+
+      setSalesData(allData);
+    } catch (error) {
+      console.error('Error in fetchSalesData:', error);
+      toast.error(error instanceof Error ? error.message : 'Personel satış verilerini getirirken bir hata oluştu');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Excel dosyasını işleme fonksiyonu
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const rawData = XLSX.utils.sheet_to_json(worksheet) as ExcelRow[];
-        
-        // Verileri doğru formata dönüştür
-        const formattedData = rawData.map(row => ({
-          personelAdi: String(row.personelAdi || ''),
-          marka: String(row.marka || ''),
-          urunKodu: String(row.urunKodu || ''),
-          renkKodu: String(row.renkKodu || ''),
-          satisAdeti: Number(row.satisAdeti) || 0,
-          satisFiyati: Number(row.satisFiyati) || 0
-        }));
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const data = e.target?.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const rawData = XLSX.utils.sheet_to_json(worksheet) as ExcelRow[];
+            
+            // Verileri doğru formata dönüştür
+            const formattedData: SupabaseSalesData[] = rawData.map(row => ({
+              personel_adi: String(row.personelAdi || ''),
+              marka: String(row.marka || ''),
+              urun_kodu: String(row.urunKodu || ''),
+              renk_kodu: String(row.renkKodu || ''),
+              satis_adeti: Number(row.satisAdeti) || 0,
+              satis_fiyati: Number(row.satisFiyati) || 0
+            }));
 
-        updateSalesData(formattedData);
-      };
-      reader.readAsBinaryString(file);
+            // Supabase'e kaydet
+            const { error } = await supabase
+              .from('personnel_sales')
+              .insert(formattedData);
+
+            if (error) {
+              throw new Error(`Veri yükleme hatası: ${error.message}`);
+            }
+
+            toast.success('Veriler başarıyla yüklendi');
+            fetchSalesData(); // Verileri yeniden yükle
+          } catch (error) {
+            console.error('File processing error:', error);
+            toast.error(error instanceof Error ? error.message : 'Dosya işlenirken bir hata oluştu');
+          }
+        };
+        reader.readAsBinaryString(file);
+      } catch (error) {
+        console.error('File upload error:', error);
+        toast.error(error instanceof Error ? error.message : 'Dosya yüklenirken bir hata oluştu');
+      }
     }
   };
 
   // Verileri temizleme fonksiyonu
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (window.confirm('Tüm veriler silinecek. Emin misiniz?')) {
-      updateSalesData([]);
+      try {
+        const { error } = await supabase
+          .from('personnel_sales')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Tüm kayıtları sil
+
+        if (error) {
+          throw new Error(`Veri silme hatası: ${error.message}`);
+        }
+
+        setSalesData([]);
+        toast.success('Tüm veriler başarıyla silindi');
+      } catch (error) {
+        console.error('Error clearing data:', error);
+        toast.error(error instanceof Error ? error.message : 'Veriler silinirken bir hata oluştu');
+      }
     }
   };
 
@@ -134,6 +225,29 @@ export default function PersonnelAnalysisPage() {
       "Satış Tutarı": Math.round(data.totalSales * 100) / 100,
       "Satış Adedi": data.totalQuantity
     }));
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm">
+        <div className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Package2 className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <h2 className="text-lg font-semibold">Personel Verileri Yükleniyor</h2>
+            <div className="flex w-full max-w-md items-center space-x-2">
+              <div className="h-2 w-full rounded-full bg-secondary">
+                <div className="h-full w-1/3 rounded-full bg-primary animate-[loading_1s_ease-in-out_infinite]" />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Veriler hazırlanıyor...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Package2, TrendingDown, TrendingUp, AlertCircle, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -175,9 +177,23 @@ const MediumStockItem = ({ item, index }: StockItemProps) => {
   );
 };
 
+// SalesItem tipini tanımlayalım
+interface SalesItem {
+  Marka: string;
+  "Ürün Grubu": string;
+  "Ürün Kodu": string;
+  "Renk Kodu": string;
+  Beden: string;
+  Envanter: string | number;
+  Sezon: string;
+  "Satış Miktarı": string | number;
+  "Satış (VD)": string | number;
+}
+
 export default function DashboardPage() {
-  const stockData: StockItem[] = useStockStore((state) => state.stockData);
-  const salesData = useSalesStore((state) => state.salesData);
+  const [stockData, setStockData] = useState<StockItem[]>([]);
+  const [salesData, setSalesData] = useState<SalesItem[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Düşük Stok Filtreleme state'leri
   const [brandFilter, setBrandFilter] = useState("");
@@ -385,7 +401,7 @@ export default function DashboardPage() {
     uniqueProducts: data.uniqueProducts.size
   }));
 
-  // Marka bazında satış dağılımı analizi
+  // Marka bazında satış dağılımı analizi - salesData state'ini kullan
   const brandSalesData = salesData.reduce((acc, item) => {
     const brand = item.Marka;
     let salesAmount = 0;
@@ -404,7 +420,7 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Marka bazında satış adedi dağılımı analizi
+  // Marka bazında satış adedi dağılımı analizi - salesData state'ini kullan
   const brandSalesQuantityData = salesData.reduce((acc, item) => {
     const brand = item.Marka;
     const salesQuantity = Number(item["Satış Miktarı"]) || 0;
@@ -475,6 +491,133 @@ export default function DashboardPage() {
     acc[group] = (acc[group] || 0) + salesQuantity;
     return acc;
   }, {} as Record<string, number>);
+
+  useEffect(() => {
+    Promise.all([fetchStockData(), fetchSalesData()])
+      .finally(() => setLoading(false));
+  }, []);
+
+  const fetchStockData = async () => {
+    try {
+      let allData: StockItem[] = [];
+      const pageSize = 1000;
+
+      // Önce toplam kayıt sayısını alalım
+      const { count, error: countError } = await supabase
+        .from('stock')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) throw countError;
+
+      if (!count) {
+        setStockData([]);
+        return;
+      }
+
+      // Kaç sayfa olacağını hesaplayalım
+      const totalPages = Math.ceil(count / pageSize);
+      
+      // Tüm sayfaları paralel olarak çekelim
+      const pagePromises = Array.from({ length: totalPages }, (_, index) =>
+        supabase
+          .from('stock')
+          .select('*')
+          .range(index * pageSize, (index + 1) * pageSize - 1)
+      );
+
+      const results = await Promise.all(pagePromises);
+
+      // Hata kontrolü yapalım
+      const hasError = results.some(result => result.error);
+      if (hasError) {
+        throw new Error('Veri çekerken hata oluştu');
+      }
+
+      // Tüm verileri birleştirelim
+      allData = results.flatMap(result => result.data || []);
+
+      console.log('Toplam yüklenen veri sayısı:', allData.length);
+      console.log('Beklenen veri sayısı:', count);
+      setStockData(allData);
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+      toast.error('Stok verilerini getirirken bir hata oluştu');
+    }
+  };
+
+  const fetchSalesData = async () => {
+    try {
+      let allData: SalesItem[] = [];
+      const pageSize = 1000;
+
+      // Önce toplam kayıt sayısını alalım
+      const { count, error: countError } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Count error:', countError);
+        throw new Error(`Veri sayısı alınırken hata oluştu: ${countError.message}`);
+      }
+
+      if (!count) {
+        setSalesData([]);
+        return;
+      }
+
+      // Kaç sayfa olacağını hesaplayalım
+      const totalPages = Math.ceil(count / pageSize);
+      
+      // Tüm sayfaları paralel olarak çekelim
+      const pagePromises = Array.from({ length: totalPages }, (_, index) =>
+        supabase
+          .from('sales')
+          .select('*')
+          .range(index * pageSize, (index + 1) * pageSize - 1)
+      );
+
+      const results = await Promise.all(pagePromises);
+
+      // Hata kontrolü yapalım
+      const errorResult = results.find(result => result.error);
+      if (errorResult?.error) {
+        console.error('Data fetch error:', errorResult.error);
+        throw new Error(`Veri çekerken hata oluştu: ${errorResult.error.message}`);
+      }
+
+      // Tüm verileri birleştirelim
+      allData = results.flatMap(result => result.data || []);
+
+      console.log('Toplam yüklenen satış verisi sayısı:', allData.length);
+      setSalesData(allData);
+    } catch (error) {
+      console.error('Error in fetchSalesData:', error);
+      toast.error(error instanceof Error ? error.message : 'Satış verilerini getirirken bir hata oluştu');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm">
+        <div className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Package2 className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <h2 className="text-lg font-semibold">Stok Verileri Yükleniyor</h2>
+            <div className="flex w-full max-w-md items-center space-x-2">
+              <div className="h-2 w-full rounded-full bg-secondary">
+                <div className="h-full w-1/3 rounded-full bg-primary animate-[loading_1s_ease-in-out_infinite]" />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Veriler hazırlanıyor...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
