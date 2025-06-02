@@ -85,7 +85,7 @@ export default function SalesPage() {
 
         // Hata kontrolü yapalım
         const errorResult = results.find(result => result.error);
-        if (errorResult) {
+        if (errorResult?.error?.message) {
           console.error('Data fetch error:', errorResult.error);
           throw new Error(`Veri çekerken hata oluştu: ${errorResult.error.message}`);
         }

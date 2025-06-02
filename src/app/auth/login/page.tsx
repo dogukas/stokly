@@ -9,14 +9,25 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
+import React from "react";
+
+function RedirectToFetcher({ setRedirectTo }: { setRedirectTo: (v: string) => void }) {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  // İlk renderda redirectTo değerini parent'a aktar
+  React.useEffect(() => {
+    setRedirectTo(redirectTo);
+  }, [redirectTo, setRedirectTo]);
+  return null;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirectTo, setRedirectTo] = useState('/dashboard');
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +66,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Suspense fallback={null}>
+        <RedirectToFetcher setRedirectTo={setRedirectTo} />
+      </Suspense>
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Giriş Yap</CardTitle>
